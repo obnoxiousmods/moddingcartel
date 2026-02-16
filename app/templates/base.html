@@ -36,7 +36,7 @@
 <body>
     <header>
         <div class="container header-content">
-            <h1><a href="/" class="site-name">🎮 {{ app_name|default('Switch Game Repository') }}</a></h1>
+            <h1><a href="/" class="site-name">{{ app_name|default('Switch Game Repository') }}</a></h1>
             <div class="header-actions">
                 {% if request.session.get('username') %}
                     <div class="user-menu-container">
@@ -58,43 +58,6 @@
                             <a href="/search" class="dropdown-item" role="menuitem">
                                 <span class="item-icon">🔍</span>
                                 <span class="item-text">Search</span>
-                            </a>
-                            <div class="dropdown-divider"></div>
-                            <div class="dropdown-header">Mirror Sites</div>
-                            <a href="https://swdl.obnoxious.lol" target="_blank" rel="noopener noreferrer" class="dropdown-item mirror-item" role="menuitem">
-                                <span class="item-icon">🌐</span>
-                                <span class="item-text">swdl.obnoxious.lol</span>
-                            </a>
-                            <a href="https://downloader.obnoxious.lol" target="_blank" rel="noopener noreferrer" class="dropdown-item mirror-item" role="menuitem">
-                                <span class="item-icon">🌐</span>
-                                <span class="item-text">downloader.obnoxious.lol</span>
-                            </a>
-                            <a href="https://swdld.obnoxious.lol" target="_blank" rel="noopener noreferrer" class="dropdown-item mirror-item" role="menuitem">
-                                <span class="item-icon">🌐</span>
-                                <span class="item-text">swdld.obnoxious.lol</span>
-                            </a>
-                            <div class="dropdown-divider"></div>
-                            <a href="https://moddingcartel.com" target="_blank" rel="noopener noreferrer" class="dropdown-item mirror-item" role="menuitem">
-                                <span class="item-icon">🌐</span>
-                                <span class="item-text">moddingcartel.com</span>
-                            </a>
-                            <a href="https://www.moddingcartel.com" target="_blank" rel="noopener noreferrer" class="dropdown-item mirror-item" role="menuitem">
-                                <span class="item-icon">🌐</span>
-                                <span class="item-text">www.moddingcartel.com</span>
-                            </a>
-                            <div class="dropdown-divider"></div>
-                            <a href="https://nswfiles.com" target="_blank" rel="noopener noreferrer" class="dropdown-item mirror-item" role="menuitem">
-                                <span class="item-icon">🌐</span>
-                                <span class="item-text">nswfiles.com</span>
-                            </a>
-                            <a href="https://www.nswfiles.com" target="_blank" rel="noopener noreferrer" class="dropdown-item mirror-item" role="menuitem">
-                                <span class="item-icon">🌐</span>
-                                <span class="item-text">www.nswfiles.com</span>
-                            </a>
-                            <div class="dropdown-divider"></div>
-                            <a href="http://cartelonsedxwqsmpdzqaxgs25zsup5gi2thiizuehgwpfrmds5wosqd.onion" target="_blank" rel="noopener noreferrer" class="dropdown-item mirror-item" role="menuitem">
-                                <span class="item-icon">🧅</span>
-                                <span class="item-text">Tor Hidden Service</span>
                             </a>
                             <div class="dropdown-divider"></div>
                             {% if request.session.get('is_admin') %}
@@ -161,13 +124,22 @@
     
     <style>
         .site-name {
-            color: inherit;
+            background: linear-gradient(135deg, #a855f7 0%, #ec4899 50%, #8b5cf6 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
             text-decoration: none;
-            transition: opacity 0.2s;
+            font-weight: 800;
+            letter-spacing: -0.5px;
+            transition: all 0.3s ease;
+            text-shadow: 0 0 30px rgba(168, 85, 247, 0.3);
+            position: relative;
         }
         
         .site-name:hover {
-            opacity: 0.8;
+            transform: translateY(-2px);
+            filter: brightness(1.2);
+            text-shadow: 0 0 40px rgba(168, 85, 247, 0.5);
         }
         
         .header-content {
@@ -197,10 +169,6 @@
             border-radius: 8px 8px 0 0;
         }
         
-        .mirror-item:hover {
-            background: rgba(0, 184, 148, 0.1);
-            color: #00d9a5;
-        }
         
         .btn-login, .btn-register, .btn-search-simple {
             padding: 8px 16px;
