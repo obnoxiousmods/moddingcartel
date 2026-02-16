@@ -139,6 +139,7 @@
                     </div>
                 {% else %}
                     <div class="auth-links">
+                        <a href="/search" class="btn-search-simple">🔍 Search</a>
                         <a href="/login" class="btn-login">Login</a>
                         <a href="/register" class="btn-register">Register</a>
                     </div>
@@ -201,13 +202,23 @@
             color: #00d9a5;
         }
         
-        .btn-login, .btn-register {
+        .btn-login, .btn-register, .btn-search-simple {
             padding: 8px 16px;
             border-radius: 6px;
             text-decoration: none;
             font-weight: 600;
             font-size: 14px;
             transition: all 0.2s;
+        }
+        
+        .btn-search-simple {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: #fff;
+        }
+        
+        .btn-search-simple:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
         }
         
         .btn-login {
