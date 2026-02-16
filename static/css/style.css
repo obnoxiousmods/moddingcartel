@@ -747,8 +747,9 @@ footer {
 }
 
 /* Chat Section for Non-Moderators */
-.chat-section {
+.quick-links-section {
     text-align: center;
+    margin-top: 2rem;
     margin-bottom: 2rem;
     display: flex;
     justify-content: center;

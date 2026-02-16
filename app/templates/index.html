@@ -2,6 +2,19 @@
 
 {% block content %}
 <div class="container">
+    <!-- Quick Links Section at the Top -->
+    <div class="quick-links-section">
+        <a href="https://chat.obnoxious.lol" target="_blank" rel="noopener noreferrer" class="btn-chat-hero">
+            💬 Join Chat/IRC
+        </a>
+        <a href="https://discord.gg/qgaMVZ26Ks" target="_blank" rel="noopener noreferrer" class="btn-discord">
+            🎮 Join Discord
+        </a>
+        <a href="/api-docs" class="btn-api-docs">
+            📖 API Documentation
+        </a>
+    </div>
+
     <!-- Moderator Actions Section -->
     {% if is_moderator %}
     <div class="mod-actions-section">
@@ -149,19 +162,6 @@
                 </div>
             </div>
         </div>
-    </div>
-    
-    <!-- Chat Button for Non-Moderators -->
-    <div class="chat-section">
-        <a href="https://chat.obnoxious.lol" target="_blank" rel="noopener noreferrer" class="btn-chat-hero">
-            💬 Join Chat/IRC
-        </a>
-        <a href="https://discord.gg/qgaMVZ26Ks" target="_blank" rel="noopener noreferrer" class="btn-discord">
-            🎮 Join Discord
-        </a>
-        <a href="/api-docs" class="btn-api-docs">
-            📖 API Documentation
-        </a>
     </div>
 </div>
 
