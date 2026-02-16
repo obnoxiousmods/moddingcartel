@@ -2,6 +2,64 @@
 
 {% block content %}
 <div class="container">
+    <!-- Primary Action Buttons - Search and Mirrors -->
+    <div class="primary-actions-section">
+        <h2 class="primary-actions-title">🎮 Get Started</h2>
+        <div class="primary-actions-grid">
+            <a href="/search" class="btn-primary-action btn-search-primary">
+                <span class="btn-icon">🔍</span>
+                <span class="btn-content">
+                    <span class="btn-title">Search Games</span>
+                    <span class="btn-description">Browse our entire collection</span>
+                </span>
+            </a>
+            <div class="btn-primary-action btn-mirrors-primary" id="mirrorsPrimaryButton">
+                <span class="btn-icon">🌐</span>
+                <span class="btn-content">
+                    <span class="btn-title">Mirror Sites</span>
+                    <span class="btn-description">Alternative access points</span>
+                </span>
+                <div class="mirrors-primary-dropdown" id="mirrorsPrimaryDropdown">
+                    <a href="https://swdl.obnoxious.lol" target="_blank" rel="noopener noreferrer" class="mirror-link">
+                        <span class="mirror-icon">🌐</span>
+                        <span>swdl.obnoxious.lol</span>
+                    </a>
+                    <a href="https://downloader.obnoxious.lol" target="_blank" rel="noopener noreferrer" class="mirror-link">
+                        <span class="mirror-icon">🌐</span>
+                        <span>downloader.obnoxious.lol</span>
+                    </a>
+                    <a href="https://swdld.obnoxious.lol" target="_blank" rel="noopener noreferrer" class="mirror-link">
+                        <span class="mirror-icon">🌐</span>
+                        <span>swdld.obnoxious.lol</span>
+                    </a>
+                    <div class="mirror-divider"></div>
+                    <a href="https://moddingcartel.com" target="_blank" rel="noopener noreferrer" class="mirror-link">
+                        <span class="mirror-icon">🌐</span>
+                        <span>moddingcartel.com</span>
+                    </a>
+                    <a href="https://www.moddingcartel.com" target="_blank" rel="noopener noreferrer" class="mirror-link">
+                        <span class="mirror-icon">🌐</span>
+                        <span>www.moddingcartel.com</span>
+                    </a>
+                    <div class="mirror-divider"></div>
+                    <a href="https://nswfiles.com" target="_blank" rel="noopener noreferrer" class="mirror-link">
+                        <span class="mirror-icon">🌐</span>
+                        <span>nswfiles.com</span>
+                    </a>
+                    <a href="https://www.nswfiles.com" target="_blank" rel="noopener noreferrer" class="mirror-link">
+                        <span class="mirror-icon">🌐</span>
+                        <span>www.nswfiles.com</span>
+                    </a>
+                    <div class="mirror-divider"></div>
+                    <a href="http://cartelonsedxwqsmpdzqaxgs25zsup5gi2thiizuehgwpfrmds5wosqd.onion" target="_blank" rel="noopener noreferrer" class="mirror-link">
+                        <span class="mirror-icon">🧅</span>
+                        <span>Tor Hidden Service</span>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Quick Links Section at the Top -->
     <div class="quick-links-section">
         <a href="https://chat.obnoxious.lol" target="_blank" rel="noopener noreferrer" class="btn-chat-hero">
@@ -345,5 +403,38 @@ window.userRole = {
     isModerator: {{ 'true' if is_moderator else 'false' }},
     isAdmin: {{ 'true' if request.session.get('is_admin', False) else 'false' }}
 };
+
+// Mirrors primary dropdown functionality
+document.addEventListener('DOMContentLoaded', function() {
+    const mirrorsPrimaryButton = document.getElementById('mirrorsPrimaryButton');
+    const mirrorsPrimaryDropdown = document.getElementById('mirrorsPrimaryDropdown');
+    
+    if (mirrorsPrimaryButton && mirrorsPrimaryDropdown) {
+        // Toggle dropdown on button click
+        mirrorsPrimaryButton.addEventListener('click', function(e) {
+            e.stopPropagation();
+            mirrorsPrimaryDropdown.classList.toggle('show');
+        });
+        
+        // Close dropdown when clicking outside
+        document.addEventListener('click', function(e) {
+            if (!mirrorsPrimaryButton.contains(e.target)) {
+                mirrorsPrimaryDropdown.classList.remove('show');
+            }
+        });
+        
+        // Close dropdown when pressing Escape
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape' && mirrorsPrimaryDropdown.classList.contains('show')) {
+                mirrorsPrimaryDropdown.classList.remove('show');
+            }
+        });
+        
+        // Prevent dropdown from closing when clicking inside it
+        mirrorsPrimaryDropdown.addEventListener('click', function(e) {
+            e.stopPropagation();
+        });
+    }
+});
 </script>
 {% endblock %}
