@@ -746,9 +746,171 @@ footer {
     box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4);
 }
 
-/* Chat Section for Non-Moderators */
-.chat-section {
+/* Primary Actions Section - Search and Mirrors */
+.primary-actions-section {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-radius: 16px;
+    padding: 2.5rem 2rem;
+    margin: 2rem 0;
+    box-shadow: 0 8px 32px rgba(102, 126, 234, 0.3);
+}
+
+.primary-actions-title {
     text-align: center;
+    color: white;
+    font-size: 1.8rem;
+    font-weight: 800;
+    margin-bottom: 1.5rem;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.primary-actions-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 1.5rem;
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+.btn-primary-action {
+    background: white;
+    border-radius: 12px;
+    padding: 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    text-decoration: none;
+    color: #333;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+    cursor: pointer;
+    position: relative;
+}
+
+.btn-primary-action:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+}
+
+.btn-primary-action .btn-icon {
+    font-size: 2.5rem;
+    flex-shrink: 0;
+}
+
+.btn-primary-action .btn-content {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    flex: 1;
+}
+
+.btn-primary-action .btn-title {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: #333;
+}
+
+.btn-primary-action .btn-description {
+    font-size: 0.9rem;
+    color: #666;
+    font-weight: 500;
+}
+
+.btn-search-primary:hover {
+    background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+}
+
+.btn-search-primary:hover .btn-title,
+.btn-search-primary:hover .btn-description {
+    color: white;
+}
+
+.btn-mirrors-primary {
+    overflow: visible;
+}
+
+.btn-mirrors-primary:hover {
+    background: linear-gradient(135deg, #00b894 0%, #00d9a5 100%);
+}
+
+.btn-mirrors-primary:hover .btn-title,
+.btn-mirrors-primary:hover .btn-description {
+    color: white;
+}
+
+.mirrors-primary-dropdown {
+    position: absolute;
+    top: calc(100% + 8px);
+    left: 0;
+    right: 0;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+    padding: 0.5rem;
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(-10px);
+    transition: all 0.3s ease;
+    z-index: 1000;
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.mirrors-primary-dropdown.show {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+}
+
+.mirror-link {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.75rem 1rem;
+    color: #333;
+    text-decoration: none;
+    border-radius: 8px;
+    transition: all 0.2s ease;
+    font-weight: 500;
+}
+
+.mirror-link:hover {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+}
+
+.mirror-icon {
+    font-size: 1.2rem;
+}
+
+.mirror-divider {
+    height: 1px;
+    background: #e0e0e0;
+    margin: 0.5rem 0;
+}
+
+@media (max-width: 768px) {
+    .primary-actions-section {
+        padding: 1.5rem 1rem;
+    }
+    
+    .primary-actions-title {
+        font-size: 1.4rem;
+    }
+    
+    .primary-actions-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .btn-primary-action .btn-icon {
+        font-size: 2rem;
+    }
+}
+
+/* Chat Section for Non-Moderators */
+.quick-links-section {
+    text-align: center;
+    margin-top: 2rem;
     margin-bottom: 2rem;
     display: flex;
     justify-content: center;
