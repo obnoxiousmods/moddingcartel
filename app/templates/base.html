@@ -128,18 +128,18 @@
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;
+            color: #a855f7; /* Fallback color for accessibility */
             text-decoration: none;
             font-weight: 800;
             letter-spacing: -0.5px;
             transition: all 0.3s ease;
-            text-shadow: 0 0 30px rgba(168, 85, 247, 0.3);
+            filter: drop-shadow(0 0 20px rgba(168, 85, 247, 0.4));
             position: relative;
         }
         
         .site-name:hover {
             transform: translateY(-2px);
-            filter: brightness(1.2);
-            text-shadow: 0 0 40px rgba(168, 85, 247, 0.5);
+            filter: drop-shadow(0 0 30px rgba(168, 85, 247, 0.6)) brightness(1.15);
         }
         
         .header-content {
