@@ -26,6 +26,7 @@ try:
         RESULT_OK,
         Usb,
     )
+
     USB_AVAILABLE = True
 except ImportError:
     USB_AVAILABLE = False
@@ -37,7 +38,9 @@ FTP_CHUNK_SIZE = 1024 * 1024  # 1MB chunks for FTP transfers
 
 
 class SphairaDownloader:
-    def __init__(self, ip_address=None, install_folder="install:", debug=True, log_dir=None):
+    def __init__(
+        self, ip_address=None, install_folder="install:", debug=True, log_dir=None
+    ):
         self.ip_address = ip_address
         self.install_folder = install_folder
         self.debug = debug
@@ -45,7 +48,9 @@ class SphairaDownloader:
 
         # Setup comprehensive logging
         self.logger = setup_logger("sphaira", log_dir=log_dir, debug=debug)
-        self.logger.info(f"SphairaDownloader initialized - IP: {ip_address}, Install folder: {install_folder}, Debug: {debug}")
+        self.logger.info(
+            f"SphairaDownloader initialized - IP: {ip_address}, Install folder: {install_folder}, Debug: {debug}"
+        )
 
     async def detect_usb_switch(self) -> bool:
         """
@@ -55,7 +60,9 @@ class SphairaDownloader:
         self.logger.info("Starting USB Switch detection using Sphaira protocol...")
 
         if not USB_AVAILABLE:
-            self.logger.warning("pyusb or usb_common_x not available - USB support disabled")
+            self.logger.warning(
+                "pyusb or usb_common_x not available - USB support disabled"
+            )
             if self.debug:
                 tqdm.write("pyusb not available - USB support disabled")
             return False
@@ -65,11 +72,15 @@ class SphairaDownloader:
                 self.logger.debug("Creating Usb connection instance...")
                 usb_conn = Usb()
 
-                self.logger.debug("Waiting for Switch to connect (VID:0x057E, PID:0x3000)...")
+                self.logger.debug(
+                    "Waiting for Switch to connect (VID:0x057E, PID:0x3000)..."
+                )
                 # This will wait for the Switch and configure endpoints
                 usb_conn.wait_for_connect()
 
-                self.logger.info("✓ Switch detected and configured via USB (Sphaira protocol)")
+                self.logger.info(
+                    "✓ Switch detected and configured via USB (Sphaira protocol)"
+                )
                 if self.debug:
                     tqdm.write("✓ Switch detected via USB (Sphaira protocol)")
 
@@ -78,7 +89,9 @@ class SphairaDownloader:
                 return True
 
             except Exception as e:
-                self.logger.error(f"USB detection error: {type(e).__name__} - {e}", exc_info=True)
+                self.logger.error(
+                    f"USB detection error: {type(e).__name__} - {e}", exc_info=True
+                )
                 if self.debug:
                     tqdm.write(f"USB detection error: {e}")
                 return False
@@ -100,8 +113,12 @@ class SphairaDownloader:
         Fast concurrent scan for Sphaira → sets self.ip_address when found
         Returns True if found and verified, False otherwise
         """
-        self.logger.info(f"Starting network discovery - Port: {port}, Max concurrent: {max_concurrent}")
-        self.logger.debug(f"Scan range: 192.168.{min(third_octets)}-{max(third_octets)}.{min(fourth_octets)}-{max(fourth_octets)}")
+        self.logger.info(
+            f"Starting network discovery - Port: {port}, Max concurrent: {max_concurrent}"
+        )
+        self.logger.debug(
+            f"Scan range: 192.168.{min(third_octets)}-{max(third_octets)}.{min(fourth_octets)}-{max(fourth_octets)}"
+        )
 
         if self.ip_address:
             self.logger.info(f"Already have IP: {self.ip_address} — skipping discovery")
@@ -151,7 +168,9 @@ class SphairaDownloader:
 
         start = time.monotonic()
         if self.debug:
-            tqdm.write(f"Scanning 192.168.{min(third_octets)}–{max(third_octets)}.x ...")
+            tqdm.write(
+                f"Scanning 192.168.{min(third_octets)}–{max(third_octets)}.x ..."
+            )
 
         tasks = []
         for a in third_octets:
@@ -170,12 +189,16 @@ class SphairaDownloader:
 
         if found_ip:
             self.ip_address = found_ip
-            self.logger.info(f"Discovery successful - Found {found_ip} in {duration:.1f}s after {probes_attempted} probes")
+            self.logger.info(
+                f"Discovery successful - Found {found_ip} in {duration:.1f}s after {probes_attempted} probes"
+            )
             if self.debug:
                 tqdm.write(f"Discovery finished in {duration:.1f}s → using {found_ip}")
             return True
         else:
-            self.logger.warning(f"No Sphaira found after {duration:.1f}s ({probes_attempted} probes attempted)")
+            self.logger.warning(
+                f"No Sphaira found after {duration:.1f}s ({probes_attempted} probes attempted)"
+            )
             if self.debug:
                 tqdm.write(f"No Sphaira found after {duration:.1f}s")
             return False
@@ -186,14 +209,16 @@ class SphairaDownloader:
         size_msb = ((file_size >> 32) & 0xFFFF) | (flags << 16)
         self.usb_conn.send_result(RESULT_OK, size_msb, size_lsb)
 
-    def _file_transfer_loop_local(self, file_path: str, file_size: int, flags: int, progress_callback, pbar, loop=None):
+    def _file_transfer_loop_local(
+        self, file_path: str, file_size: int, flags: int, progress_callback, pbar
+    ):
         """Transfer loop for local files using Sphaira protocol"""
         self.logger.info("Starting file transfer loop for local file...")
 
         bytes_transferred = 0
         total_requests = 0
 
-        with open(file_path, 'rb') as f:
+        with open(file_path, "rb") as f:
             while True:
                 # Get offset + size from Switch
                 [offset, size, _] = self.usb_conn.get_send_data_header()
@@ -219,7 +244,9 @@ class SphairaDownloader:
                     # Progress indicator
                     progress = (offset / file_size) * 100 if file_size > 0 else 0
                     if total_requests % 10 == 0:
-                        self.logger.debug(f"[Transfer] offset={offset}, size={size} ({progress:.1f}% - request #{total_requests})")
+                        self.logger.debug(
+                            f"[Transfer] offset={offset}, size={size} ({progress:.1f}% - request #{total_requests})"
+                        )
 
                     # Respond with length and CRC32C
                     self.usb_conn.send_result(RESULT_OK, len(buf), crc32c.crc32c(buf))
@@ -232,21 +259,25 @@ class SphairaDownloader:
                     # Update progress
                     if pbar:
                         pbar.update(len(buf))
-                    elif progress_callback and loop:
-                        # Call async progress_callback from sync code
-                        future = asyncio.run_coroutine_threadsafe(progress_callback(len(buf)), loop)
-                        try:
-                            future.result(timeout=0.2)  # Wait up to 200ms for callback
-                        except Exception as e:
-                            self.logger.warning(f"Progress callback failed: {e}")
 
                 except Exception as e:
-                    self.logger.error(f"Error reading/sending chunk at offset {offset}: {e}")
+                    self.logger.error(
+                        f"Error reading/sending chunk at offset {offset}: {e}"
+                    )
                     self.usb_conn.send_result(RESULT_ERROR)
                     raise
 
-    async def _file_transfer_loop_http(self, client: httpx.AsyncClient, url: str, file_size: int,
-                                       flags: int, headers: dict, cookies: dict, progress_callback, pbar):
+    async def _file_transfer_loop_http(
+        self,
+        client: httpx.AsyncClient,
+        url: str,
+        file_size: int,
+        flags: int,
+        headers: dict,
+        cookies: dict,
+        progress_callback,
+        pbar,
+    ):
         """Transfer loop for HTTP streams using Sphaira protocol"""
         self.logger.info("Starting file transfer loop for HTTP stream...")
 
@@ -254,13 +285,13 @@ class SphairaDownloader:
         buffer = {}
         bytes_transferred = 0
         total_requests = 0
-        loop = asyncio.get_event_loop()
 
         def _transfer_loop():
             nonlocal bytes_transferred, total_requests
 
             # Use sync httpx client in executor
             import httpx as sync_httpx
+
             with sync_httpx.Client(
                 timeout=sync_httpx.Timeout(30.0, connect=10.0),
                 follow_redirects=True,
@@ -284,7 +315,9 @@ class SphairaDownloader:
                         # Use cached data
                         buf = buffer[cache_key][:size]
                         if total_requests % 50 == 0:
-                            self.logger.debug(f"[Cache hit] offset={offset}, size={size}")
+                            self.logger.debug(
+                                f"[Cache hit] offset={offset}, size={size}"
+                            )
                     else:
                         try:
                             # Make a range request
@@ -294,11 +327,17 @@ class SphairaDownloader:
                                 range_headers.update(headers)
 
                             # Progress indicator
-                            progress = (offset / file_size) * 100 if file_size > 0 else 0
+                            progress = (
+                                (offset / file_size) * 100 if file_size > 0 else 0
+                            )
                             if total_requests % 10 == 0:
-                                self.logger.debug(f"[Download] offset={offset}, size={size} ({progress:.1f}% - request #{total_requests})")
+                                self.logger.debug(
+                                    f"[Download] offset={offset}, size={size} ({progress:.1f}% - request #{total_requests})"
+                                )
 
-                            response = sync_client.get(url, headers=range_headers, cookies=cookies)
+                            response = sync_client.get(
+                                url, headers=range_headers, cookies=cookies
+                            )
                             response.raise_for_status()
 
                             buf = response.content
@@ -313,7 +352,9 @@ class SphairaDownloader:
                                 del buffer[oldest_key]
 
                         except Exception as e:
-                            self.logger.error(f"Error downloading chunk at offset {offset}: {e}")
+                            self.logger.error(
+                                f"Error downloading chunk at offset {offset}: {e}"
+                            )
                             self.usb_conn.send_result(RESULT_ERROR)
                             continue
 
@@ -326,19 +367,16 @@ class SphairaDownloader:
                     # Update progress
                     if pbar:
                         pbar.update(len(buf))
-                    elif progress_callback:
-                        # Call async progress_callback from sync code
-                        future = asyncio.run_coroutine_threadsafe(progress_callback(len(buf)), loop)
-                        try:
-                            future.result(timeout=0.2)  # Wait up to 200ms for callback
-                        except Exception as e:
-                            self.logger.warning(f"Progress callback failed: {e}")
 
         await asyncio.get_event_loop().run_in_executor(None, _transfer_loop)
 
-    async def _usb_install_file(self, file_path: str, filename: str, file_size: int, progress_callback=None):
+    async def _usb_install_file(
+        self, file_path: str, filename: str, file_size: int, progress_callback=None
+    ):
         """Install a file via USB using Sphaira protocol"""
-        self.logger.info(f"Starting USB file install - File: {file_path}, Size: {file_size} bytes ({file_size / (1024*1024):.2f} MiB)")
+        self.logger.info(
+            f"Starting USB file install - File: {file_path}, Size: {file_size} bytes ({file_size / (1024 * 1024):.2f} MiB)"
+        )
 
         if not self.usb_conn:
             error_msg = "USB connection not initialized"
@@ -352,7 +390,7 @@ class SphairaDownloader:
         if not progress_callback:
             pbar = tqdm(
                 total=file_size,
-                unit='B',
+                unit="B",
                 unit_scale=True,
                 unit_divisor=1024,
                 desc="Uploading via USB",
@@ -384,7 +422,9 @@ class SphairaDownloader:
                     self.logger.info("✓ Quit command received")
                     return {"error": "Transfer cancelled by Switch"}
                 elif cmd == CMD_OPEN:
-                    self.logger.info(f"✓ Install command received for file index {file_index}")
+                    self.logger.info(
+                        f"✓ Install command received for file index {file_index}"
+                    )
 
                     # Set FLAG_NONE since we can seek
                     flags = FLAG_NONE
@@ -393,7 +433,9 @@ class SphairaDownloader:
                     self._send_file_info_result(file_size, flags)
 
                     # Start file transfer loop
-                    self._file_transfer_loop_local(file_path, file_size, flags, progress_callback, pbar, loop)
+                    self._file_transfer_loop_local(
+                        file_path, file_size, flags, progress_callback, pbar
+                    )
                 else:
                     self.logger.error(f"✗ Unknown command received: {cmd}")
                     self.usb_conn.send_result(RESULT_ERROR)
@@ -402,30 +444,42 @@ class SphairaDownloader:
                 return {"success": True}
 
             except Exception as e:
-                self.logger.error(f"USB transfer error: {type(e).__name__} - {e}", exc_info=True)
+                self.logger.error(
+                    f"USB transfer error: {type(e).__name__} - {e}", exc_info=True
+                )
                 raise
 
         try:
-            result = await asyncio.get_event_loop().run_in_executor(None, _usb_handshake_and_transfer)
+            result = await asyncio.get_event_loop().run_in_executor(
+                None, _usb_handshake_and_transfer
+            )
 
             elapsed_time = time.time() - start_time
             avg_speed = file_size / elapsed_time if elapsed_time > 0 else 0
 
             if result.get("success"):
-                self.logger.info("="*80)
+                self.logger.info("=" * 80)
                 self.logger.info("USB file transfer completed successfully!")
                 self.logger.info(f"Filename: {filename}")
-                self.logger.info(f"Total bytes: {file_size} ({file_size / (1024*1024):.2f} MiB)")
+                self.logger.info(
+                    f"Total bytes: {file_size} ({file_size / (1024 * 1024):.2f} MiB)"
+                )
                 self.logger.info(f"Elapsed time: {elapsed_time:.2f} seconds")
-                self.logger.info(f"Average speed: {avg_speed / (1024*1024):.2f} MiB/s")
-                self.logger.info("="*80)
+                self.logger.info(
+                    f"Average speed: {avg_speed / (1024 * 1024):.2f} MiB/s"
+                )
+                self.logger.info("=" * 80)
 
             if pbar:
                 pbar.close()
                 if result.get("success"):
                     tqdm.write(f"USB upload complete: {filename}")
 
-            return result if result.get("success") else {"error": result.get("error", "Unknown error")}
+            return (
+                result
+                if result.get("success")
+                else {"error": result.get("error", "Unknown error")}
+            )
 
         except Exception as e:
             error_msg = f"USB file transfer error: {type(e).__name__} - {e}"
@@ -434,14 +488,25 @@ class SphairaDownloader:
                 pbar.close()
             return {"error": error_msg}
 
-    async def _usb_stream_http(self, url: str, filename: str, headers: Optional[dict] = None,
-                               cookies: Optional[dict] = None, proxy: Optional[str] = None,
-                               connect_timeout: float = 12.0, read_timeout: float = 60.0,
-                               progress_callback=None):
+    async def _usb_stream_http(
+        self,
+        url: str,
+        filename: str,
+        headers: Optional[dict] = None,
+        cookies: Optional[dict] = None,
+        proxy: Optional[str] = None,
+        connect_timeout: float = 12.0,
+        read_timeout: float = 60.0,
+        progress_callback=None,
+    ):
         """Stream HTTP content directly to Switch via USB using Sphaira protocol"""
         self.logger.info(f"Starting USB HTTP stream - URL: {url}, Filename: {filename}")
-        self.logger.debug(f"Parameters - Headers: {headers}, Cookies: {cookies}, Proxy: {proxy}")
-        self.logger.debug(f"Timeouts - Connect: {connect_timeout}s, Read: {read_timeout}s")
+        self.logger.debug(
+            f"Parameters - Headers: {headers}, Cookies: {cookies}, Proxy: {proxy}"
+        )
+        self.logger.debug(
+            f"Timeouts - Connect: {connect_timeout}s, Read: {read_timeout}s"
+        )
 
         if not self.usb_conn:
             error_msg = "USB connection not initialized"
@@ -464,11 +529,17 @@ class SphairaDownloader:
 
                 if resp.status_code == 200 and "Content-Length" in resp.headers:
                     total_size = int(resp.headers["Content-Length"])
-                    self.logger.info(f"Content-Length from HEAD: {total_size} bytes ({total_size / (1024*1024):.2f} MiB)")
+                    self.logger.info(
+                        f"Content-Length from HEAD: {total_size} bytes ({total_size / (1024 * 1024):.2f} MiB)"
+                    )
                 else:
-                    self.logger.warning(f"HEAD request returned {resp.status_code}, content length unknown")
+                    self.logger.warning(
+                        f"HEAD request returned {resp.status_code}, content length unknown"
+                    )
         except Exception as e:
-            self.logger.warning(f"HEAD request failed (size unknown): {type(e).__name__} - {e}")
+            self.logger.warning(
+                f"HEAD request failed (size unknown): {type(e).__name__} - {e}"
+            )
             if not progress_callback and self.debug:
                 tqdm.write(f"HEAD request failed (size unknown): {e}")
 
@@ -483,7 +554,7 @@ class SphairaDownloader:
         if not progress_callback:
             pbar = tqdm(
                 total=total_size,
-                unit='B',
+                unit="B",
                 unit_scale=True,
                 unit_divisor=1024,
                 desc="Streaming to USB",
@@ -515,7 +586,9 @@ class SphairaDownloader:
                     self.logger.info("✓ Quit command received")
                     return {"error": "Transfer cancelled by Switch"}
                 elif cmd == CMD_OPEN:
-                    self.logger.info(f"✓ Install command received for file index {file_index}")
+                    self.logger.info(
+                        f"✓ Install command received for file index {file_index}"
+                    )
 
                     # Set FLAG_NONE since we can seek with HTTP range requests
                     flags = FLAG_NONE
@@ -530,12 +603,16 @@ class SphairaDownloader:
                     return {"error": f"Unknown command: {cmd}"}
 
             except Exception as e:
-                self.logger.error(f"USB handshake error: {type(e).__name__} - {e}", exc_info=True)
+                self.logger.error(
+                    f"USB handshake error: {type(e).__name__} - {e}", exc_info=True
+                )
                 raise
 
         try:
             # Perform handshake
-            result = await asyncio.get_event_loop().run_in_executor(None, _usb_handshake)
+            result = await asyncio.get_event_loop().run_in_executor(
+                None, _usb_handshake
+            )
 
             if not result.get("success"):
                 if pbar:
@@ -548,27 +625,36 @@ class SphairaDownloader:
                 proxy=proxy,
                 follow_redirects=True,
             ) as http_client:
-
                 self.logger.info("Starting HTTP stream transfer loop...")
                 await self._file_transfer_loop_http(
-                    http_client, url, total_size, FLAG_NONE,
-                    headers, cookies, progress_callback, pbar
+                    http_client,
+                    url,
+                    total_size,
+                    FLAG_NONE,
+                    headers,
+                    cookies,
+                    progress_callback,
+                    pbar,
                 )
 
             elapsed_time = time.time() - start_time
             avg_speed = total_size / elapsed_time if elapsed_time > 0 else 0
 
-            self.logger.info("="*80)
+            self.logger.info("=" * 80)
             self.logger.info("USB stream transfer completed successfully!")
             self.logger.info(f"Filename: {filename}")
-            self.logger.info(f"Total bytes: {total_size} ({total_size / (1024*1024):.2f} MiB)")
+            self.logger.info(
+                f"Total bytes: {total_size} ({total_size / (1024 * 1024):.2f} MiB)"
+            )
             self.logger.info(f"Elapsed time: {elapsed_time:.2f} seconds")
-            self.logger.info(f"Average speed: {avg_speed / (1024*1024):.2f} MiB/s")
-            self.logger.info("="*80)
+            self.logger.info(f"Average speed: {avg_speed / (1024 * 1024):.2f} MiB/s")
+            self.logger.info("=" * 80)
 
             if pbar:
                 pbar.close()
-                tqdm.write(f"USB stream finished: {filename} ({total_size / (1024*1024):.1f} MiB)")
+                tqdm.write(
+                    f"USB stream finished: {filename} ({total_size / (1024 * 1024):.1f} MiB)"
+                )
 
             return {"success": True, "size_bytes": total_size, "filename": filename}
 
@@ -591,12 +677,16 @@ class SphairaDownloader:
                 pbar.close()
             return {"error": error_msg}
 
-    async def uploadLocalGame(self, fileName="bastion.nsp", method="auto", progress_callback=None):
+    async def uploadLocalGame(
+        self, fileName="bastion.nsp", method="auto", progress_callback=None
+    ):
         self.logger.info(f"uploadLocalGame called - File: {fileName}, Method: {method}")
         file_path = f"software/{fileName}"
         try:
             file_size = os.path.getsize(file_path)
-            self.logger.info(f"Local file found - Size: {file_size} bytes ({file_size / (1024*1024):.2f} MiB)")
+            self.logger.info(
+                f"Local file found - Size: {file_size} bytes ({file_size / (1024 * 1024):.2f} MiB)"
+            )
         except FileNotFoundError:
             error_msg = f"File {file_path} not found"
             self.logger.error(error_msg)
@@ -627,11 +717,15 @@ class SphairaDownloader:
                     self.logger.error(error_msg)
                     return {"error": error_msg}
 
-            return await self._usb_install_file(file_path, fileName, file_size, progress_callback)
+            return await self._usb_install_file(
+                file_path, fileName, file_size, progress_callback
+            )
 
         # Use FTP
         elif method == "ftp":
-            self.logger.info(f"Using FTP method for local game upload to {self.ip_address or 'unknown IP'}")
+            self.logger.info(
+                f"Using FTP method for local game upload to {self.ip_address or 'unknown IP'}"
+            )
             if not self.ip_address:
                 if not progress_callback and self.debug:
                     tqdm.write("No IP set → running discovery first...")
@@ -648,7 +742,7 @@ class SphairaDownloader:
             if not progress_callback:
                 pbar = tqdm(
                     total=file_size,
-                    unit='B',
+                    unit="B",
                     unit_scale=True,
                     unit_divisor=1024,
                     desc="Uploading via FTP",
@@ -656,7 +750,9 @@ class SphairaDownloader:
                 )
 
             try:
-                self.logger.debug(f"Connecting to FTP - Host: {self.ip_address}, Port: 5000")
+                self.logger.debug(
+                    f"Connecting to FTP - Host: {self.ip_address}, Port: 5000"
+                )
                 async with aioftp.Client.context(
                     host=self.ip_address, port=5000, user="anon", password=""
                 ) as client:
@@ -665,7 +761,9 @@ class SphairaDownloader:
                         if path["type"] != "dir":
                             if pbar:
                                 pbar.close()
-                            error_msg = f"{self.install_folder} exists but is not a directory"
+                            error_msg = (
+                                f"{self.install_folder} exists but is not a directory"
+                            )
                             self.logger.error(error_msg)
                             return {"error": error_msg}
                     except aioftp.StatusCodeError as e:
@@ -677,9 +775,13 @@ class SphairaDownloader:
                             return {"error": error_msg}
 
                 if not progress_callback and self.debug:
-                    tqdm.write(f"Uploading {fileName} to {self.ip_address}:{self.install_folder}")
+                    tqdm.write(
+                        f"Uploading {fileName} to {self.ip_address}:{self.install_folder}"
+                    )
 
-                self.logger.info(f"Starting FTP upload to {self.ip_address}:{self.install_folder}/{fileName}")
+                self.logger.info(
+                    f"Starting FTP upload to {self.ip_address}:{self.install_folder}/{fileName}"
+                )
                 async with client.upload_stream(
                     destination=f"{self.install_folder}/{fileName}"
                 ) as stream:
@@ -700,13 +802,17 @@ class SphairaDownloader:
                 elapsed_time = time.time() - start_time
                 avg_speed = bytes_transferred / elapsed_time if elapsed_time > 0 else 0
 
-                self.logger.info("="*80)
+                self.logger.info("=" * 80)
                 self.logger.info("FTP upload completed successfully!")
                 self.logger.info(f"Filename: {fileName}")
-                self.logger.info(f"Total bytes transferred: {bytes_transferred} ({bytes_transferred / (1024*1024):.2f} MiB)")
+                self.logger.info(
+                    f"Total bytes transferred: {bytes_transferred} ({bytes_transferred / (1024 * 1024):.2f} MiB)"
+                )
                 self.logger.info(f"Elapsed time: {elapsed_time:.2f} seconds")
-                self.logger.info(f"Average speed: {avg_speed / (1024*1024):.2f} MiB/s")
-                self.logger.info("="*80)
+                self.logger.info(
+                    f"Average speed: {avg_speed / (1024 * 1024):.2f} MiB/s"
+                )
+                self.logger.info("=" * 80)
 
                 if pbar:
                     pbar.close()
@@ -745,8 +851,12 @@ class SphairaDownloader:
         Supports both USB (faster) and FTP (network) methods.
         """
         self.logger.info(f"streamHttpGame called - URL: {url}, Method: {method}")
-        self.logger.debug(f"Parameters - Headers: {headers}, Cookies: {cookies}, Proxy: {proxy}")
-        self.logger.debug(f"Timeouts - Connect: {connect_timeout}s, Read: {read_timeout}s, Chunk size: {chunk_size}")
+        self.logger.debug(
+            f"Parameters - Headers: {headers}, Cookies: {cookies}, Proxy: {proxy}"
+        )
+        self.logger.debug(
+            f"Timeouts - Connect: {connect_timeout}s, Read: {read_timeout}s, Chunk size: {chunk_size}"
+        )
 
         if not filename:
             filename = url.split("/")[-1] or "downloaded_game.nsp"
@@ -764,7 +874,9 @@ class SphairaDownloader:
             else:
                 # Fall back to FTP
                 method = "ftp"
-                self.logger.info("USB not available, falling back to FTP mode for streaming")
+                self.logger.info(
+                    "USB not available, falling back to FTP mode for streaming"
+                )
                 if not progress_callback and self.debug:
                     tqdm.write("USB not available, using FTP mode")
 
@@ -778,13 +890,21 @@ class SphairaDownloader:
                     return {"error": error_msg}
 
             return await self._usb_stream_http(
-                url, filename, headers, cookies, proxy,
-                connect_timeout, read_timeout, progress_callback
+                url,
+                filename,
+                headers,
+                cookies,
+                proxy,
+                connect_timeout,
+                read_timeout,
+                progress_callback,
             )
 
         # Use FTP (original implementation)
         elif method == "ftp":
-            self.logger.info(f"Using FTP method for HTTP streaming to {self.ip_address or 'unknown IP'}")
+            self.logger.info(
+                f"Using FTP method for HTTP streaming to {self.ip_address or 'unknown IP'}"
+            )
             if not self.ip_address:
                 if not progress_callback and self.debug:
                     tqdm.write("No IP set → starting discovery...")
@@ -816,7 +936,7 @@ class SphairaDownloader:
             if not progress_callback:
                 pbar = tqdm(
                     total=total_size,
-                    unit='B',
+                    unit="B",
                     unit_scale=True,
                     unit_divisor=1024,
                     desc="Streaming to Sphaira",
@@ -833,12 +953,16 @@ class SphairaDownloader:
                         if st["type"] != "dir":
                             if pbar:
                                 pbar.close()
-                            return {"error": f"{self.install_folder} exists but is not a directory"}
+                            return {
+                                "error": f"{self.install_folder} exists but is not a directory"
+                            }
                     except aioftp.StatusCodeError as e:
                         if pbar:
                             pbar.close()
                         if e.code == 550:
-                            return {"error": f"{self.install_folder} not found → is this Sphaira?"}
+                            return {
+                                "error": f"{self.install_folder} not found → is this Sphaira?"
+                            }
 
                     destination = f"{self.install_folder}/{filename}"
 
@@ -854,7 +978,9 @@ class SphairaDownloader:
                                 response.raise_for_status()
 
                                 if not progress_callback and self.debug:
-                                    tqdm.write(f"Streaming: {url} → {self.ip_address}:{destination}")
+                                    tqdm.write(
+                                        f"Streaming: {url} → {self.ip_address}:{destination}"
+                                    )
 
                                 async for chunk in response.aiter_bytes():
                                     if not chunk:
@@ -870,12 +996,14 @@ class SphairaDownloader:
 
                 if pbar:
                     pbar.close()
-                    tqdm.write(f"Stream finished: {filename}  ({pbar.n / (1024*1024):.1f} MiB)")
+                    tqdm.write(
+                        f"Stream finished: {filename}  ({pbar.n / (1024 * 1024):.1f} MiB)"
+                    )
 
                 return {
                     "success": True,
                     "size_bytes": bytes_transferred if not pbar else pbar.n,
-                    "filename": filename
+                    "filename": filename,
                 }
 
             except httpx.HTTPStatusError as e:

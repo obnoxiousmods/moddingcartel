@@ -1,8 +1,9 @@
 import struct
+import time
+
+import crc32c
 import usb.core
 import usb.util
-import time
-import crc32c
 
 # magic number (SPH0) for the script and switch.
 MAGIC = 0x53504830
@@ -21,6 +22,7 @@ RESULT_ERROR = 1
 FLAG_NONE = 0
 FLAG_STREAM = 1 << 0
 
+
 class UsbPacket:
     STRUCT_FORMAT = "<6I"  # 6 unsigned 32-bit ints, little-endian
 
@@ -34,7 +36,15 @@ class UsbPacket:
 
     def pack(self):
         self.generate_crc32c()
-        return struct.pack(self.STRUCT_FORMAT, self.magic, self.arg2, self.arg3, self.arg4, self.arg5, self.crc32c)
+        return struct.pack(
+            self.STRUCT_FORMAT,
+            self.magic,
+            self.arg2,
+            self.arg3,
+            self.arg4,
+            self.arg5,
+            self.crc32c,
+        )
 
     @classmethod
     def unpack(cls, data):
@@ -42,7 +52,9 @@ class UsbPacket:
         return cls(*fields)
 
     def calculate_crc32c(self):
-        data = struct.pack("<5I", self.magic, self.arg2, self.arg3, self.arg4, self.arg5)
+        data = struct.pack(
+            "<5I", self.magic, self.arg2, self.arg3, self.arg4, self.arg5
+        )
         return crc32c.crc32c(data)
 
     def generate_crc32c(self):
@@ -55,6 +67,7 @@ class UsbPacket:
             raise ValueError("Bad magic")
         return True
 
+
 class SendPacket(UsbPacket):
     @classmethod
     def build(cls, cmd, arg3=0, arg4=0):
@@ -64,6 +77,7 @@ class SendPacket(UsbPacket):
 
     def get_cmd(self):
         return self.arg2
+
 
 class ResultPacket(UsbPacket):
     @classmethod
@@ -77,6 +91,7 @@ class ResultPacket(UsbPacket):
         if self.arg2 != RESULT_OK:
             raise ValueError("Result not OK")
         return True
+
 
 class SendDataPacket(UsbPacket):
     @classmethod
@@ -96,6 +111,7 @@ class SendDataPacket(UsbPacket):
     def get_crc32c(self):
         return self.arg5
 
+
 class Usb:
     def __init__(self):
         self.__out_ep = None
@@ -104,11 +120,10 @@ class Usb:
     def wait_for_connect(self) -> None:
         print("waiting for switch")
 
-        dev = None
-        while (dev is None):
-            dev = usb.core.find(idVendor=0x057E, idProduct=0x3000)
-            if (dev is None):
-                time.sleep(0.5)
+        dev = usb.core.find(idVendor=0x057E, idProduct=0x3000)
+
+        if not dev:
+            raise ValueError("Switch not found")
 
         print("found the switch!\n")
         cfg = None
@@ -125,14 +140,20 @@ class Usb:
             dev.set_configuration()
             cfg = dev.get_active_configuration()
 
-        is_out_ep = lambda ep: usb.util.endpoint_direction(ep.bEndpointAddress) == usb.util.ENDPOINT_OUT
-        is_in_ep = lambda ep: usb.util.endpoint_direction(ep.bEndpointAddress) == usb.util.ENDPOINT_IN
-        self.__out_ep = usb.util.find_descriptor(cfg[(0,0)], custom_match=is_out_ep)
-        self.__in_ep = usb.util.find_descriptor(cfg[(0,0)], custom_match=is_in_ep)
+        is_out_ep = lambda ep: (
+            usb.util.endpoint_direction(ep.bEndpointAddress) == usb.util.ENDPOINT_OUT
+        )
+        is_in_ep = lambda ep: (
+            usb.util.endpoint_direction(ep.bEndpointAddress) == usb.util.ENDPOINT_IN
+        )
+        self.__out_ep = usb.util.find_descriptor(cfg[(0, 0)], custom_match=is_out_ep)
+        self.__in_ep = usb.util.find_descriptor(cfg[(0, 0)], custom_match=is_in_ep)
         assert self.__out_ep is not None
         assert self.__in_ep is not None
 
-        print(f"✓ iManufacturer: {dev.manufacturer}, iProduct: {dev.product}, iSerialNumber: {dev.serial_number}")
+        print(
+            f"✓ iManufacturer: {dev.manufacturer}, iProduct: {dev.product}, iSerialNumber: {dev.serial_number}"
+        )
         print(f"✓ OUT endpoint: 0x{self.__out_ep.bEndpointAddress:02x}")
         print(f"✓ IN endpoint: 0x{self.__in_ep.bEndpointAddress:02x}")
         print("✓ Device configured successfully\n")
