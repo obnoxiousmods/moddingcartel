@@ -12,34 +12,10 @@ Sphaira supports MTP & FTP & SFTP? for network installation.
 I want to support bruteforcing the IP address on port 5000 to find the Sphaira device on the local network, and then send the files there.
 Also support manually entering the IP address of the Sphaira device.
 Would MTP support ip auto finding idk.
-
-Snippet for AIOFTP usage
-import asyncio
-import aioftp
-
-
-async def get_mp3(host, port, login, password):
-    async with aioftp.Client.context(host, port, login, password) as client:
-        for path, info in (await client.list(recursive=True)):
-            if info["type"] == "file" and path.suffix == ".mp3":
-                await client.download(path)
-
-
-async def main():
-    tasks = [
-        asyncio.create_task(get_mp3("server1.com", 21, "login", "password")),
-        asyncio.create_task(get_mp3("server2.com", 21, "login", "password")),
-        asyncio.create_task(get_mp3("server3.com", 21, "login", "password")),
-    ]
-    await asyncio.wait(tasks)
-
-asyncio.run(main())
-
 .....
 
 Sphaira is listening on Host 192.168.1.79 for now, port 5000, user and pass blank
-WE must upload the file to the INSTALL folder. Lets check if exists first, if not create it, then upload the file there.
-
+WE must upload the file to the install: folder. Lets check if exists first, if not then it's not Sphaira. Abort.
 """
 
 
@@ -135,16 +111,16 @@ class SphairaDownloader:
         if method == "ftp":
             self.progress_bar = ProgressBarWithSpeed(
                 "Uploading via FTP",
-                max=max_chunks,
-                suffix="%(percent)d%% - %(speed_mbps).2f MB/s - %(elapsed_td)s - ETA: %(eta_td)s",
+                max=100, # Calculate the max based on file size
+                suffix="%(percent)d%% - %(elapsed_td)s - %(eta_td)s",
             )
             return await self._uploadViaFTP(fileName=fileName)
 
         if method == "mtp":
             self.progress_bar = ProgressBarWithSpeed(
                 "Uploading via MTP",
-                max=max_chunks,
-                suffix="%(percent)d%% - %(speed_mbps).2f MB/s - %(elapsed_td)s - ETA: %(eta_td)s",
+                max=100,
+                suffix="%(percent)d%% - %(elapsed_td)s - %(eta_td)s",
             )
             return await self._uploadViaMTP(fileName=fileName)
 
