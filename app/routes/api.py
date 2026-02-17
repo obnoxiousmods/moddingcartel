@@ -958,7 +958,7 @@ async def api_login(request: Request):
         # Check if user has an API key for "Send to Switch"
         from app.models.api_key import ApiKey
         user_api_keys = await db.get_user_api_keys(user._key)
-        
+
         # Look for existing "Send to Switch" API key
         send_to_switch_key = None
         for key_data in user_api_keys:
@@ -970,16 +970,16 @@ async def api_login(request: Request):
         if not send_to_switch_key:
             api_key_plain = ApiKey.generate_key()
             api_key_hash = ApiKey.hash_key(api_key_plain)
-            
+
             api_key_data = {
                 "user_id": user._key,
                 "key_name": "Send to Switch",
                 "key_hash": api_key_hash,
                 "is_active": True,
             }
-            
+
             key_id = await db.create_api_key(api_key_data)
-            
+
             if not key_id:
                 return JSONResponse(
                     {"success": False, "error": "Failed to create API key"},
@@ -1038,7 +1038,7 @@ async def send_to_switch(request: Request):
 
         # Add to user's send queue
         success = await db.add_to_send_queue(user_id, entry_id)
-        
+
         if success:
             logger.info(f"Added entry {entry_id} to send queue for user {user_id}")
             return JSONResponse({
@@ -1070,10 +1070,10 @@ async def get_send_queue(request: Request):
 
     try:
         user_id = request.state.user_id
-        
+
         # Get user's send queue
         queue_items = await db.get_send_queue(user_id)
-        
+
         return JSONResponse({
             "success": True,
             "queue": queue_items,
@@ -1116,7 +1116,7 @@ async def update_send_queue_item(request: Request):
 
         # Update queue item status
         success = await db.update_send_queue_item(user_id, queue_item_id, status)
-        
+
         if success:
             logger.info(f"Updated queue item {queue_item_id} to status {status} for user {user_id}")
             return JSONResponse({

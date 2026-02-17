@@ -7,7 +7,6 @@ via Sphaira FTP server. Features a TUI (Text User Interface) for monitoring.
 """
 import asyncio
 import logging
-import os
 import sys
 import time
 from pathlib import Path

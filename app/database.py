@@ -2012,17 +2012,17 @@ class Database:
                 """,
                 bind_vars={"user_id": user_id, "entry_id": entry_id}
             )
-            
+
             exists = False
             async with cursor:
                 async for _ in cursor:
                     exists = True
                     break
-            
+
             if exists:
                 logger.info(f"Entry {entry_id} already in queue for user {user_id}")
                 return True  # Already in queue, return success
-            
+
             # Add to queue
             queue_item = {
                 "user_id": user_id,
@@ -2031,11 +2031,11 @@ class Database:
                 "created_at": datetime.now(timezone.utc).isoformat(),
                 "updated_at": datetime.now(timezone.utc).isoformat(),
             }
-            
+
             result = await self.send_queue_collection.insert(queue_item)
             logger.info(f"Added entry {entry_id} to send queue for user {user_id}: {result['_key']}")
             return True
-            
+
         except Exception as e:
             logger.error(f"Error adding to send queue: {e}")
             return False
@@ -2062,14 +2062,14 @@ class Database:
                 """,
                 bind_vars={"user_id": user_id}
             )
-            
+
             items = []
             async with cursor:
                 async for item in cursor:
                     items.append(item)
-            
+
             return items
-            
+
         except Exception as e:
             logger.error(f"Error fetching send queue: {e}")
             return []
@@ -2086,35 +2086,35 @@ class Database:
                 """,
                 bind_vars={"queue_item_id": queue_item_id, "user_id": user_id}
             )
-            
+
             exists = False
             async with cursor:
                 async for _ in cursor:
                     exists = True
                     break
-            
+
             if not exists:
                 logger.warning(f"Queue item {queue_item_id} not found for user {user_id}")
                 return False
-            
+
             # Update the status
             result = await self.send_queue_collection.update({
                 "_key": queue_item_id,
                 "status": status,
                 "updated_at": datetime.now(timezone.utc).isoformat(),
             })
-            
+
             if result and not result.get("error"):
                 logger.info(f"Updated queue item {queue_item_id} to status {status}")
-                
+
                 # If completed or failed, we could optionally delete it after some time
                 # For now, we'll keep it for history
-                
+
                 return True
             else:
                 logger.error(f"Error updating queue item: {result.get('errorMessage', 'Unknown error')}")
                 return False
-                
+
         except Exception as e:
             logger.error(f"Error updating send queue item: {e}")
             return False
