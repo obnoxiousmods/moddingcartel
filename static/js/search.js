@@ -1201,6 +1201,11 @@
                 return;
             }
             
+            if (!response.ok) {
+                Toast.error(`Error: ${response.status} ${response.statusText}`);
+                return;
+            }
+            
             const data = await response.json();
             
             if (data.success) {

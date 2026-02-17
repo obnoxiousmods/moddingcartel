@@ -1020,7 +1020,11 @@ async def send_to_switch(request: Request):
 
     try:
         # Get user_id from session or API auth
-        user_id = request.session.get("user_id") or request.state.user_id
+        if has_session:
+            user_id = request.session.get("user_id")
+        else:
+            user_id = request.state.user_id
+
         body = await request.json()
         entry_id = body.get("entry_id")
 
