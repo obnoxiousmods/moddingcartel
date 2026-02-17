@@ -6,17 +6,22 @@ This builds send_to_switch.py into a single Windows executable
 
 import sys
 from pathlib import Path
+from PyInstaller.utils.hooks import copy_metadata
 
 # Get the project root directory
 project_root = Path(SPECPATH)
 
 block_cipher = None
 
+# Collect metadata for packages that need it
+datas = []
+datas += copy_metadata('aioftp')
+
 a = Analysis(
     ['software/send_to_switch.py'],
     pathex=[str(project_root)],
     binaries=[],
-    datas=[],
+    datas=datas,
     hiddenimports=[
         'yaml',
         'rich',
