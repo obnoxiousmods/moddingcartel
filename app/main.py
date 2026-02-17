@@ -38,6 +38,7 @@ from app.routes.admin import (
     admin_users,
 )
 from app.routes.api import (
+    api_login,
     compute_file_hashes,
     create_entry_comment,
     delete_entry,
@@ -46,9 +47,12 @@ from app.routes.api import (
     get_entry_comments,
     get_entry_info,
     get_entry_vote_stats,
+    get_send_queue,
     get_user_stats,
     list_entries,
+    send_to_switch,
     submit_report,
+    update_send_queue_item,
     vote_comment,
     vote_entry,
 )
@@ -295,6 +299,10 @@ routes = [
     Route("/api/comments/{comment_id}/vote", vote_comment, methods=["POST"]),
     Route("/api/comments/{comment_id}/votes", get_comment_vote_stats, methods=["GET"]),
     Route("/api/user/stats", get_user_stats, methods=["GET"]),
+    Route("/api/auth/login", api_login, methods=["POST"]),
+    Route("/api/send-to-switch", send_to_switch, methods=["POST"]),
+    Route("/api/send-queue", get_send_queue, methods=["GET"]),
+    Route("/api/send-queue/update", update_send_queue_item, methods=["POST"]),
     Route("/login", login_page, methods=["GET"]),
     Route("/login", login_submit, methods=["POST"]),
     Route("/register", register_page, methods=["GET"]),

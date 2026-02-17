@@ -14,6 +14,7 @@
     
     // Check if user is moderator or admin
     const isModerator = window.userRole && (window.userRole.isModerator || window.userRole.isAdmin);
+    const isAuthenticated = window.userRole && window.userRole.isAuthenticated;
     
     // Helper function to normalize strings for search (replace underscores with spaces)
     function normalizeForSearch(text) {
@@ -680,6 +681,19 @@
             showComments(entry);
         });
         
+        // Send to Switch button (only for authenticated users)
+        if (isAuthenticated) {
+            const sendToSwitchBtn = document.createElement('button');
+            sendToSwitchBtn.className = 'btn-send-switch';
+            sendToSwitchBtn.textContent = '📤 Send to Switch';
+            sendToSwitchBtn.title = 'Send this game to your Switch via Sphaira';
+            sendToSwitchBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                handleSendToSwitch(entry);
+            });
+            actions.appendChild(sendToSwitchBtn);
+        }
+        
         actions.appendChild(downloadBtn);
         actions.appendChild(infoBtn);
         actions.appendChild(reportBtn);
@@ -1166,6 +1180,32 @@
                 submitBtn.textContent = 'Submit Report';
             }
         });
+    }
+    
+    // Handle send to switch
+    async function handleSendToSwitch(entry) {
+        try {
+            const response = await fetch('/api/send-to-switch', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    entry_id: entry._key
+                })
+            });
+            
+            const data = await response.json();
+            
+            if (data.success) {
+                Toast.success(`${entry.name.replace(/_/g, ' ')} has been added to your Send to Switch queue!`);
+            } else {
+                Toast.error(data.error || 'Failed to add to queue');
+            }
+        } catch (error) {
+            console.error('Error sending to switch:', error);
+            Toast.error('Error adding to queue. Please try again.');
+        }
     }
     
     // Handle delete of an entry (moderator only)

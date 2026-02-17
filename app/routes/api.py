@@ -922,3 +922,216 @@ async def get_comment_vote_stats(request: Request):
             {"success": False, "error": "Failed to fetch vote stats"},
             status_code=500,
         )
+
+
+async def api_login(request: Request):
+    """JSON API endpoint for login - returns or creates API key"""
+    try:
+        # Parse JSON body
+        body = await request.json()
+        username = body.get("username", "").strip()
+        password = body.get("password", "")
+
+        if not username or not password:
+            return JSONResponse(
+                {"success": False, "error": "Username and password are required"},
+                status_code=400,
+            )
+
+        # Get user from database
+        from app.models.user import User
+        user_data = await db.get_user_by_username(username)
+        if not user_data:
+            return JSONResponse(
+                {"success": False, "error": "Invalid username or password"},
+                status_code=401,
+            )
+
+        # Verify password
+        user = User.from_dict(user_data)
+        if not User.verify_password(password, user.password_hash):
+            return JSONResponse(
+                {"success": False, "error": "Invalid username or password"},
+                status_code=401,
+            )
+
+        # Check if user has an API key for "Send to Switch"
+        from app.models.api_key import ApiKey
+        user_api_keys = await db.get_user_api_keys(user._key)
+        
+        # Look for existing "Send to Switch" API key
+        send_to_switch_key = None
+        for key_data in user_api_keys:
+            if key_data.get("key_name") == "Send to Switch" and key_data.get("is_active"):
+                send_to_switch_key = key_data
+                break
+
+        # If no key exists, create one
+        if not send_to_switch_key:
+            api_key_plain = ApiKey.generate_key()
+            api_key_hash = ApiKey.hash_key(api_key_plain)
+            
+            api_key_data = {
+                "user_id": user._key,
+                "key_name": "Send to Switch",
+                "key_hash": api_key_hash,
+                "is_active": True,
+            }
+            
+            key_id = await db.create_api_key(api_key_data)
+            
+            if not key_id:
+                return JSONResponse(
+                    {"success": False, "error": "Failed to create API key"},
+                    status_code=500,
+                )
+
+            logger.info(f"Created new 'Send to Switch' API key for user: {username}")
+            return JSONResponse({
+                "success": True,
+                "api_key": api_key_plain,
+                "message": "New API key created",
+            })
+        else:
+            # Key exists, but we can't return it (it's hashed)
+            # Return error indicating they already have a key
+            return JSONResponse(
+                {"success": False, "error": "API key already exists. Please use your existing key or regenerate from settings."},
+                status_code=400,
+            )
+
+    except Exception as e:
+        logger.error(f"API login error: {e}", exc_info=True)
+        return JSONResponse(
+            {"success": False, "error": "An error occurred during login"},
+            status_code=500,
+        )
+
+
+async def send_to_switch(request: Request):
+    """API endpoint to add a game to the user's send queue"""
+    # Require API authentication
+    if not getattr(request.state, "authenticated", False):
+        return JSONResponse(
+            {"error": "API authentication required"},
+            status_code=401,
+        )
+
+    try:
+        user_id = request.state.user_id
+        body = await request.json()
+        entry_id = body.get("entry_id")
+
+        if not entry_id:
+            return JSONResponse(
+                {"success": False, "error": "entry_id is required"},
+                status_code=400,
+            )
+
+        # Verify entry exists
+        entry = await db.get_entry_by_id(entry_id)
+        if not entry:
+            return JSONResponse(
+                {"success": False, "error": "Entry not found"},
+                status_code=404,
+            )
+
+        # Add to user's send queue
+        success = await db.add_to_send_queue(user_id, entry_id)
+        
+        if success:
+            logger.info(f"Added entry {entry_id} to send queue for user {user_id}")
+            return JSONResponse({
+                "success": True,
+                "message": "Game added to send queue",
+            })
+        else:
+            return JSONResponse(
+                {"success": False, "error": "Failed to add to queue"},
+                status_code=500,
+            )
+
+    except Exception as e:
+        logger.error(f"Send to switch error: {e}", exc_info=True)
+        return JSONResponse(
+            {"success": False, "error": "An error occurred"},
+            status_code=500,
+        )
+
+
+async def get_send_queue(request: Request):
+    """API endpoint to get pending items from user's send queue"""
+    # Require API authentication
+    if not getattr(request.state, "authenticated", False):
+        return JSONResponse(
+            {"error": "API authentication required"},
+            status_code=401,
+        )
+
+    try:
+        user_id = request.state.user_id
+        
+        # Get user's send queue
+        queue_items = await db.get_send_queue(user_id)
+        
+        return JSONResponse({
+            "success": True,
+            "queue": queue_items,
+        })
+
+    except Exception as e:
+        logger.error(f"Get send queue error: {e}", exc_info=True)
+        return JSONResponse(
+            {"success": False, "error": "An error occurred"},
+            status_code=500,
+        )
+
+
+async def update_send_queue_item(request: Request):
+    """API endpoint to update status of a send queue item"""
+    # Require API authentication
+    if not getattr(request.state, "authenticated", False):
+        return JSONResponse(
+            {"error": "API authentication required"},
+            status_code=401,
+        )
+
+    try:
+        user_id = request.state.user_id
+        body = await request.json()
+        queue_item_id = body.get("queue_item_id")
+        status = body.get("status")  # 'processing', 'completed', 'failed'
+
+        if not queue_item_id or not status:
+            return JSONResponse(
+                {"success": False, "error": "queue_item_id and status are required"},
+                status_code=400,
+            )
+
+        if status not in ["processing", "completed", "failed"]:
+            return JSONResponse(
+                {"success": False, "error": "Invalid status. Must be 'processing', 'completed', or 'failed'"},
+                status_code=400,
+            )
+
+        # Update queue item status
+        success = await db.update_send_queue_item(user_id, queue_item_id, status)
+        
+        if success:
+            logger.info(f"Updated queue item {queue_item_id} to status {status} for user {user_id}")
+            return JSONResponse({
+                "success": True,
+                "message": f"Queue item updated to {status}",
+            })
+        else:
+            return JSONResponse(
+                {"success": False, "error": "Failed to update queue item"},
+                status_code=500,
+            )
+
+    except Exception as e:
+        logger.error(f"Update send queue item error: {e}", exc_info=True)
+        return JSONResponse(
+            {"success": False, "error": "An error occurred"},
+            status_code=500,
+        )
