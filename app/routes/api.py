@@ -966,39 +966,37 @@ async def api_login(request: Request):
                 send_to_switch_key = key_data
                 break
 
-        # If no key exists, create one
-        if not send_to_switch_key:
-            api_key_plain = ApiKey.generate_key()
-            api_key_hash = ApiKey.hash_key(api_key_plain)
+        # If key exists, we need to create a new one (can't return hashed key)
+        # Delete old key and create new one
+        if send_to_switch_key:
+            logger.info(f"Regenerating 'Send to Switch' API key for user: {username}")
+            await db.revoke_api_key(send_to_switch_key["_key"])
 
-            api_key_data = {
-                "user_id": user._key,
-                "key_name": "Send to Switch",
-                "key_hash": api_key_hash,
-                "is_active": True,
-            }
+        # Create new API key
+        api_key_plain = ApiKey.generate_key()
+        api_key_hash = ApiKey.hash_key(api_key_plain)
 
-            key_id = await db.create_api_key(api_key_data)
+        api_key_data = {
+            "user_id": user._key,
+            "key_name": "Send to Switch",
+            "key_hash": api_key_hash,
+            "is_active": True,
+        }
 
-            if not key_id:
-                return JSONResponse(
-                    {"success": False, "error": "Failed to create API key"},
-                    status_code=500,
-                )
+        key_id = await db.create_api_key(api_key_data)
 
-            logger.info(f"Created new 'Send to Switch' API key for user: {username}")
-            return JSONResponse({
-                "success": True,
-                "api_key": api_key_plain,
-                "message": "New API key created",
-            })
-        else:
-            # Key exists, but we can't return it (it's hashed)
-            # Return error indicating they already have a key
+        if not key_id:
             return JSONResponse(
-                {"success": False, "error": "API key already exists. Please use your existing key or regenerate from settings."},
-                status_code=400,
+                {"success": False, "error": "Failed to create API key"},
+                status_code=500,
             )
+
+        logger.info(f"Created 'Send to Switch' API key for user: {username}")
+        return JSONResponse({
+            "success": True,
+            "api_key": api_key_plain,
+            "message": "API key created (regenerated if one existed previously)",
+        })
 
     except Exception as e:
         logger.error(f"API login error: {e}", exc_info=True)

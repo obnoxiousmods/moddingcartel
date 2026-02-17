@@ -394,9 +394,10 @@ function updateQueueDisplay(queueItems) {
     // Update counts
     const pending = queueItems.filter(item => item.status === 'pending').length;
     const processing = queueItems.filter(item => item.status === 'processing').length;
-    
+
+    document.getElementById('pending-count').textContent = pending;
     document.getElementById('processing-count').textContent = processing;
-    
+
     // Update progress for processing items
     queueItems.forEach(item => {
         if (item.status === 'processing') {
