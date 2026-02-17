@@ -1080,6 +1080,14 @@ async def get_send_queue(request: Request):
         # Get user's send queue
         queue_items = await db.get_send_queue(user_id)
 
+        # Construct full download URLs for each item
+        base_url = str(request.base_url).rstrip("/")
+        for item in queue_items:
+            # Replace entry_source with full download URL
+            entry_id = item.get("entry_id")
+            if entry_id:
+                item["entry_source"] = f"{base_url}/api/download/{entry_id}"
+
         return JSONResponse({
             "success": True,
             "queue": queue_items,
