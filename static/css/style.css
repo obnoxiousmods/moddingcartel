@@ -1662,3 +1662,109 @@ footer {
     margin-bottom: 0.5rem;
     flex-wrap: wrap;
 }
+
+/* Download Progress Modal */
+.download-progress-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.8);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10000;
+    animation: fadeIn 0.2s ease;
+}
+
+.download-progress-container {
+    background: #2a2a2a;
+    border-radius: 12px;
+    padding: 30px;
+    min-width: 400px;
+    max-width: 500px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+}
+
+.download-progress-header {
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+.download-progress-header h3 {
+    color: #fff;
+    font-size: 24px;
+    margin: 0;
+}
+
+.download-progress-body {
+    margin-bottom: 20px;
+}
+
+.download-filename {
+    color: #999;
+    font-size: 14px;
+    text-align: center;
+    margin-bottom: 15px;
+    word-wrap: break-word;
+}
+
+.download-progress-bar {
+    width: 100%;
+    height: 20px;
+    background: #333;
+    border-radius: 10px;
+    overflow: hidden;
+    margin-bottom: 10px;
+}
+
+.download-progress-fill {
+    height: 100%;
+    background: linear-gradient(135deg, #5a9fd4, #4a7fb4);
+    width: 0%;
+    transition: width 0.3s;
+    animation: pulse 1.5s infinite;
+}
+
+.download-progress-text {
+    color: #5a9fd4;
+    text-align: center;
+    margin: 10px 0 5px 0;
+    font-weight: 600;
+    font-size: 14px;
+}
+
+.download-progress-speed {
+    color: #999;
+    text-align: center;
+    margin: 5px 0;
+    font-size: 13px;
+}
+
+.download-progress-footer {
+    text-align: center;
+}
+
+.download-cancel-btn {
+    padding: 10px 30px;
+    background: #444;
+    color: #fff;
+    border: none;
+    border-radius: 6px;
+    font-weight: 600;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.download-cancel-btn:hover {
+    background: #555;
+}
+
+@media (max-width: 600px) {
+    .download-progress-container {
+        min-width: 300px;
+        max-width: 90%;
+    }
+}

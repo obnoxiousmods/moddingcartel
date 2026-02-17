@@ -711,10 +711,150 @@
         if (entry.type === 'url') {
             window.open(entry.source, '_blank');
         } else {
-            // For filepaths, use the download API endpoint
+            // For filepaths, use the download API endpoint with progress tracking
             const downloadUrl = `/api/download/${encodeURIComponent(entry._key)}`;
-            window.location.href = downloadUrl;
+            downloadFileWithProgress(downloadUrl, entry.name);
         }
+    }
+    
+    // Download file with progress tracking
+    function downloadFileWithProgress(url, filename) {
+        // Create progress modal
+        const modal = createDownloadProgressModal(filename);
+        document.body.appendChild(modal);
+        
+        const progressFill = modal.querySelector('.download-progress-fill');
+        const progressText = modal.querySelector('.download-progress-text');
+        const progressSpeed = modal.querySelector('.download-progress-speed');
+        const cancelBtn = modal.querySelector('.download-cancel-btn');
+        
+        const xhr = new XMLHttpRequest();
+        
+        let startTime = Date.now();
+        let lastLoaded = 0;
+        let lastTime = startTime;
+        
+        // Handle download progress
+        xhr.addEventListener('progress', function(event) {
+            if (event.lengthComputable) {
+                const percentComplete = Math.round((event.loaded / event.total) * 100);
+                progressFill.style.width = percentComplete + '%';
+                progressText.textContent = `Downloading: ${percentComplete}%`;
+                
+                // Calculate download speed
+                const currentTime = Date.now();
+                const timeDiff = (currentTime - lastTime) / 1000; // seconds
+                const loadedDiff = event.loaded - lastLoaded;
+                
+                if (timeDiff > 0.5) { // Update speed every 0.5 seconds
+                    const speedBps = loadedDiff / timeDiff;
+                    const speedMBps = speedBps / (1024 * 1024);
+                    
+                    // Format size
+                    const downloadedMB = (event.loaded / (1024 * 1024)).toFixed(2);
+                    const totalMB = (event.total / (1024 * 1024)).toFixed(2);
+                    
+                    progressSpeed.textContent = `${downloadedMB} MB / ${totalMB} MB (${speedMBps.toFixed(2)} MB/s)`;
+                    
+                    lastLoaded = event.loaded;
+                    lastTime = currentTime;
+                }
+            }
+        });
+        
+        // Handle download completion
+        xhr.addEventListener('load', function() {
+            if (xhr.status >= 200 && xhr.status < 300) {
+                // Create blob from response
+                const blob = new Blob([xhr.response]);
+                const downloadUrl = window.URL.createObjectURL(blob);
+                
+                // Create temporary link and trigger download
+                const a = document.createElement('a');
+                a.href = downloadUrl;
+                a.download = filename;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                window.URL.revokeObjectURL(downloadUrl);
+                
+                // Show success and close modal
+                progressText.textContent = 'Download complete!';
+                progressFill.style.width = '100%';
+                setTimeout(() => {
+                    modal.remove();
+                }, 1500);
+            } else {
+                progressText.textContent = 'Download failed!';
+                progressText.style.color = '#ef4444';
+                progressSpeed.textContent = `Error: ${xhr.status} ${xhr.statusText}`;
+                cancelBtn.textContent = 'Close';
+            }
+        });
+        
+        // Handle download error
+        xhr.addEventListener('error', function() {
+            progressText.textContent = 'Download failed!';
+            progressText.style.color = '#ef4444';
+            progressSpeed.textContent = 'Network error occurred';
+            cancelBtn.textContent = 'Close';
+        });
+        
+        // Handle download abort
+        xhr.addEventListener('abort', function() {
+            progressText.textContent = 'Download cancelled';
+            progressText.style.color = '#f59e0b';
+            progressSpeed.textContent = '';
+            setTimeout(() => {
+                modal.remove();
+            }, 1500);
+        });
+        
+        // Cancel button handler
+        cancelBtn.addEventListener('click', function() {
+            if (xhr.readyState !== XMLHttpRequest.DONE) {
+                xhr.abort();
+            } else {
+                modal.remove();
+            }
+        });
+        
+        // Start download
+        xhr.open('GET', url);
+        xhr.responseType = 'blob';
+        xhr.send();
+    }
+    
+    // Create download progress modal
+    function createDownloadProgressModal(filename) {
+        const modal = document.createElement('div');
+        modal.className = 'download-progress-modal';
+        modal.innerHTML = `
+            <div class="download-progress-container">
+                <div class="download-progress-header">
+                    <h3>📥 Downloading</h3>
+                </div>
+                <div class="download-progress-body">
+                    <p class="download-filename">${escapeHtml(filename)}</p>
+                    <div class="download-progress-bar">
+                        <div class="download-progress-fill"></div>
+                    </div>
+                    <p class="download-progress-text">Starting download...</p>
+                    <p class="download-progress-speed"></p>
+                </div>
+                <div class="download-progress-footer">
+                    <button class="download-cancel-btn">Cancel</button>
+                </div>
+            </div>
+        `;
+        return modal;
+    }
+    
+    // Helper function to escape HTML
+    function escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
     }
     
     // Show detailed file information
