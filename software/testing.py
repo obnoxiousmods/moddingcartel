@@ -1,4 +1,6 @@
 import asyncio
+import os
+import time
 
 import aiofiles
 import aioftp
@@ -41,6 +43,28 @@ WE must upload the file to the INSTALL folder. Lets check if exists first, if no
 """
 
 
+class ProgressBarWithSpeed(Bar):
+    """Custom progress bar that displays MB/s speed"""
+
+    def __init__(self, *args, **kwargs):
+        self.start_time = time.time()
+        self.bytes_transferred = 0
+        super().__init__(*args, **kwargs)
+
+    def update_bytes(self, bytes_count):
+        """Update the number of bytes transferred"""
+        self.bytes_transferred += bytes_count
+        self.next()
+
+    @property
+    def speed_mbps(self):
+        """Calculate current speed in MB/s"""
+        elapsed = time.time() - self.start_time
+        if elapsed > 0:
+            return (self.bytes_transferred / (1024 * 1024)) / elapsed
+        return 0.0
+
+
 class SphairaDownloader:
     def __init__(self, ip_address, install_folder="install:", debug=True):
         """Sphaira uploader helper
@@ -53,6 +77,8 @@ class SphairaDownloader:
         self.install_folder = install_folder
         self.debug = debug
         self.progress_bar = None
+        self.bytes_transferred = 0
+        self.start_time = None
 
     async def _uploadViaFTP(self, fileName="bastion.nsp"):
         async with aioftp.Client.context(
@@ -86,26 +112,39 @@ class SphairaDownloader:
                             break
                         writeResult = await stream.write(chunk)
                         if writeResult is None:
-                            self.progress_bar.next()
+                            self.progress_bar.update_bytes(len(chunk))
                             pass
+
+            if self.progress_bar:
+                self.progress_bar.finish()
 
             if self.debug:
                 print(f"Uploaded {fileName} to Sphaira at {self.ip_address}")
 
     async def uploadLocalGame(self, fileName="bastion.nsp", method="ftp"):
+        # Calculate file size for progress bar
+        file_path = f"software/{fileName}"
+        try:
+            file_size = os.path.getsize(file_path)
+            chunk_size = 1024 * 1024  # 1MB chunks
+            max_chunks = (file_size + chunk_size - 1) // chunk_size  # Round up
+        except FileNotFoundError:
+            print(f"Error: File {file_path} not found")
+            return {"error": f"File {file_path} not found"}
+
         if method == "ftp":
-            self.progress_bar = Bar(
+            self.progress_bar = ProgressBarWithSpeed(
                 "Uploading via FTP",
-                max= # Calculate the max based on file size
-                suffix="%(percent)d%% - %(elapsed_td)s - %(eta_td)s",
+                max=max_chunks,
+                suffix="%(percent)d%% - %(speed_mbps).2f MB/s - %(elapsed_td)s - ETA: %(eta_td)s",
             )
             return await self._uploadViaFTP(fileName=fileName)
 
         if method == "mtp":
-            self.progress_bar = Bar(
+            self.progress_bar = ProgressBarWithSpeed(
                 "Uploading via MTP",
-                max=
-                suffix="%(percent)d%% - %(elapsed_td)s - %(eta_td)s",
+                max=max_chunks,
+                suffix="%(percent)d%% - %(speed_mbps).2f MB/s - %(elapsed_td)s - ETA: %(eta_td)s",
             )
             return await self._uploadViaMTP(fileName=fileName)
 
