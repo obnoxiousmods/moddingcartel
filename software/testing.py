@@ -1,5 +1,8 @@
 import asyncio
+
+import aiofiles
 import aioftp
+from progress.bar import Bar
 
 """This file is going to be a library/API for python developers to implement downloading games and automatically sending them to Sphaira on a NSW.
 
@@ -8,6 +11,7 @@ I want to support bruteforcing the IP address on port 5000 to find the Sphaira d
 Also support manually entering the IP address of the Sphaira device.
 Would MTP support ip auto finding idk.
 
+Snippet for AIOFTP usage
 import asyncio
 import aioftp
 
@@ -29,23 +33,87 @@ async def main():
 
 asyncio.run(main())
 
+.....
+
+Sphaira is listening on Host 192.168.1.79 for now, port 5000, user and pass blank
+WE must upload the file to the INSTALL folder. Lets check if exists first, if not create it, then upload the file there.
+
 """
 
+
 class SphairaDownloader:
-    def __init__(self, ip_address=None):
+    def __init__(self, ip_address, install_folder="install:", debug=True):
+        """Sphaira uploader helper
+
+        Args:
+            ip_address (str): Ip address for your NSW. Must be on LAN.
+            install_folder (str, optional): Don't change this. Defaults to "install:".
+        """
         self.ip_address = ip_address
+        self.install_folder = install_folder
+        self.debug = debug
+        self.progress_bar = None
 
-    async def testGameUpload(self, fileName="bastion.nsp"):
-        if self.ip_address is None:
-            print("No IP address provided. Please set the IP address of the Sphaira device.")
-            return
+    async def _uploadViaFTP(self, fileName="bastion.nsp"):
+        async with aioftp.Client.context(
+            host=self.ip_address, port=5000, user="anon", password=""
+        ) as client:
+            try:
+                path = await client.stat(self.install_folder)
 
-        try:
-            async with aioftp.Client.context(self.ip_address, 5000) as client:
-                await client.upload(fileName, fileName)
-                print(f"Successfully uploaded {fileName} to Sphaira at {self.ip_address}")
-        except Exception as e:
-            print(f"Failed to upload {fileName} to Sphaira at {self.ip_address}: {e}")
+                if path["type"] != "dir":
+                    print(
+                        f"{self.install_folder} exists but is not a directory. Deleting it and creating a new directory..."
+                    )
+
+            except aioftp.StatusCodeError as e:
+                if e.code == 550:  # Directory does not exist
+                    print(
+                        f"{self.install_folder} directory does not exist. Not Sphaira?"
+                    )
+                    return {
+                        "error": f"{self.install_folder} directory does not exist. Not Sphaira?"
+                    }
+
+            print(f"Uploading {fileName} to Sphaira at {self.ip_address}...")
+            async with client.upload_stream(
+                destination=f"{self.install_folder}/{fileName}"
+            ) as stream:
+                async with aiofiles.open(f"software/{fileName}", "rb") as f:
+                    while True:
+                        chunk = await f.read(1024 * 1024)  # Read in 1MB chunks
+                        if not chunk:
+                            break
+                        writeResult = await stream.write(chunk)
+                        if writeResult is None:
+                            self.progress_bar.next()
+                            pass
+
+            if self.debug:
+                print(f"Uploaded {fileName} to Sphaira at {self.ip_address}")
+
+    async def uploadLocalGame(self, fileName="bastion.nsp", method="ftp"):
+        if method == "ftp":
+            self.progress_bar = Bar(
+                "Uploading via FTP",
+                max= # Calculate the max based on file size
+                suffix="%(percent)d%% - %(elapsed_td)s - %(eta_td)s",
+            )
+            return await self._uploadViaFTP(fileName=fileName)
+
+        if method == "mtp":
+            self.progress_bar = Bar(
+                "Uploading via MTP",
+                max=
+                suffix="%(percent)d%% - %(elapsed_td)s - %(eta_td)s",
+            )
+            return await self._uploadViaMTP(fileName=fileName)
+
+        return {
+            "error": f"Unsupported upload method: {method} | Supported methods: ftp, mtp"
+        }
+
+
 if __name__ == "__main__":
-    downloader = SphairaDownloader()
-    asyncio.run(downloader.download_game("game_id"))
+    downloader = SphairaDownloader(ip_address="192.168.1.79")
+    asyncio.run(downloader.uploadLocalGame())
