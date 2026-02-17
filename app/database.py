@@ -887,7 +887,7 @@ class Database:
             results = await self.api_keys_collection.update(
                 {
                     "_key": key_id,
-                    "last_used_at": datetime.now(datetime.timezone.utc).isoformat(),
+                    "last_used_at": datetime.now(timezone.utc).isoformat(),
                 }
             )
             if not results or results.get("error"):
@@ -904,9 +904,7 @@ class Database:
         """Log API usage"""
         try:
             if "timestamp" not in usage_data:
-                usage_data["timestamp"] = datetime.now(
-                    datetime.timezone.utc
-                ).isoformat()
+                usage_data["timestamp"] = datetime.now(timezone.utc).isoformat()
 
             result = await self.api_usage_collection.insert(usage_data)
             if not result or result.get("error"):
