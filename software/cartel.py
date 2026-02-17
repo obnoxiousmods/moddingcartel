@@ -14,7 +14,7 @@ logger = logging.getLogger(__name__)
 class ModdingCartel:
     """Client for ModdingCartel API"""
 
-    def __init__(self, base_url: str = "http://localhost:6069", api_key: Optional[str] = None):
+    def __init__(self, base_url: str = "http://127.0.0.1:6069", api_key: Optional[str] = None):
         """
         Initialize the ModdingCartel client.
 

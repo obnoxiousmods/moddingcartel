@@ -78,7 +78,7 @@ A full-featured Python application with TUI interface:
 #### Configuration:
 ```yaml
 api_key: <generated_on_login>
-base_url: http://localhost:6069
+base_url: http://127.0.0.1:6069
 switch_ip: <auto_discovered>
 ```
 
