@@ -14,9 +14,10 @@ if ! command -v python3 &> /dev/null; then
 fi
 
 echo "[1/4] Installing dependencies..."
+# Note: Dependencies are reinstalled on each build to ensure clean environment
 python3 -m pip install --upgrade pip
-pip install pyinstaller
-pip install -r requirements.txt
+python3 -m pip install pyinstaller
+python3 -m pip install -r requirements.txt
 
 echo
 echo "[2/4] Running PyInstaller..."

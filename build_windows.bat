@@ -16,9 +16,10 @@ if errorlevel 1 (
 )
 
 echo [1/4] Installing dependencies...
+REM Note: Dependencies are reinstalled on each build to ensure clean environment
 python -m pip install --upgrade pip
-pip install pyinstaller
-pip install -r requirements.txt
+python -m pip install pyinstaller
+python -m pip install -r requirements.txt
 
 echo.
 echo [2/4] Running PyInstaller...

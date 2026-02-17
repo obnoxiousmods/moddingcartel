@@ -61,5 +61,3 @@ jobs:
           2. Enter your ModdingCartel credentials
           3. The app will discover your Switch on the network
           4. Start queuing games to send!
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
