@@ -81,6 +81,7 @@
     position: absolute;
     top: calc(100% + 4px);
     left: 0;
+    right: 0;
     width: 100%;
     background: #1a1a1a;
     border: 1px solid #9c88ff;
@@ -90,6 +91,7 @@
     display: none;
     overflow: hidden;
     animation: dropdownSlideIn 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    max-width: 100vw;
 }
 
 @keyframes dropdownSlideIn {
@@ -226,6 +228,7 @@
 @media (max-width: 768px) {
     .custom-dropdown-wrapper {
         min-width: 160px;
+        width: 100%;
     }
     
     .custom-dropdown-selected {
@@ -234,6 +237,16 @@
     
     .dropdown-option {
         padding: 8px 12px;
+    }
+    
+    .custom-dropdown-menu {
+        max-width: calc(100vw - 2rem);
+        left: 0;
+        right: 0;
+    }
+    
+    .dropdown-options {
+        max-height: 200px;
     }
 }
 

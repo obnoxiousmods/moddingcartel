@@ -8,4 +8,5 @@ aiofiles
 pyyaml
 argon2-cffi
 pyotp
-qrcode[pil]ruff
+qrcode[pil]
+ruff

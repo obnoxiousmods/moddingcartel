@@ -36,56 +36,8 @@
 <body>
     <header>
         <div class="container header-content">
-            <h1><a href="/" class="site-name">🎮 {{ app_name|default('Switch Game Repository') }}</a></h1>
+            <h1><a href="/" class="site-name">{{ app_name|default('Switch Game Repository') }}</a></h1>
             <div class="header-actions">
-                <a href="/search" class="btn-search" title="Search Games">
-                    <span class="search-icon">🔍</span>
-                    <span class="search-text">Search</span>
-                </a>
-                <div class="mirrors-menu-container">
-                    <button class="btn-mirrors" id="mirrorsButton" aria-expanded="false" aria-haspopup="true" title="Mirror Sites">
-                        <span class="mirrors-icon">🌐</span>
-                        <span class="mirrors-text">Mirrors</span>
-                    </button>
-                    <div class="mirrors-dropdown" id="mirrorsDropdown" role="menu" aria-labelledby="mirrorsButton">
-                        <div class="dropdown-header">Mirror Sites</div>
-                        <a href="https://swdl.obnoxious.lol" target="_blank" rel="noopener noreferrer" class="dropdown-item mirror-item" role="menuitem">
-                            <span class="item-icon">🌐</span>
-                            <span class="item-text">swdl.obnoxious.lol</span>
-                        </a>
-                        <a href="https://downloader.obnoxious.lol" target="_blank" rel="noopener noreferrer" class="dropdown-item mirror-item" role="menuitem">
-                            <span class="item-icon">🌐</span>
-                            <span class="item-text">downloader.obnoxious.lol</span>
-                        </a>
-                        <a href="https://swdld.obnoxious.lol" target="_blank" rel="noopener noreferrer" class="dropdown-item mirror-item" role="menuitem">
-                            <span class="item-icon">🌐</span>
-                            <span class="item-text">swdld.obnoxious.lol</span>
-                        </a>
-                        <div class="dropdown-divider"></div>
-                        <a href="https://moddingcartel.com" target="_blank" rel="noopener noreferrer" class="dropdown-item mirror-item" role="menuitem">
-                            <span class="item-icon">🌐</span>
-                            <span class="item-text">moddingcartel.com</span>
-                        </a>
-                        <a href="https://www.moddingcartel.com" target="_blank" rel="noopener noreferrer" class="dropdown-item mirror-item" role="menuitem">
-                            <span class="item-icon">🌐</span>
-                            <span class="item-text">www.moddingcartel.com</span>
-                        </a>
-                        <div class="dropdown-divider"></div>
-                        <a href="https://nswfiles.com" target="_blank" rel="noopener noreferrer" class="dropdown-item mirror-item" role="menuitem">
-                            <span class="item-icon">🌐</span>
-                            <span class="item-text">nswfiles.com</span>
-                        </a>
-                        <a href="https://www.nswfiles.com" target="_blank" rel="noopener noreferrer" class="dropdown-item mirror-item" role="menuitem">
-                            <span class="item-icon">🌐</span>
-                            <span class="item-text">www.nswfiles.com</span>
-                        </a>
-                        <div class="dropdown-divider"></div>
-                        <a href="http://cartelonsedxwqsmpdzqaxgs25zsup5gi2thiizuehgwpfrmds5wosqd.onion" target="_blank" rel="noopener noreferrer" class="dropdown-item mirror-item" role="menuitem">
-                            <span class="item-icon">🧅</span>
-                            <span class="item-text">Tor Hidden Service</span>
-                        </a>
-                    </div>
-                </div>
                 {% if request.session.get('username') %}
                     <div class="user-menu-container">
                         <button class="user-menu-button" id="userMenuButton" aria-expanded="false" aria-haspopup="true">
@@ -103,6 +55,11 @@
                             </svg>
                         </button>
                         <div class="user-dropdown" id="userDropdown" role="menu" aria-labelledby="userMenuButton">
+                            <a href="/search" class="dropdown-item" role="menuitem">
+                                <span class="item-icon">🔍</span>
+                                <span class="item-text">Search</span>
+                            </a>
+                            <div class="dropdown-divider"></div>
                             {% if request.session.get('is_admin') %}
                                 <a href="/admincp" class="dropdown-item dropdown-admin" role="menuitem">
                                     <span class="item-icon">⚙️</span>
@@ -145,6 +102,7 @@
                     </div>
                 {% else %}
                     <div class="auth-links">
+                        <a href="/search" class="btn-search-simple">🔍 Search</a>
                         <a href="/login" class="btn-login">Login</a>
                         <a href="/register" class="btn-register">Register</a>
                     </div>
@@ -166,13 +124,22 @@
     
     <style>
         .site-name {
-            color: inherit;
+            background: linear-gradient(135deg, #a855f7 0%, #ec4899 50%, #8b5cf6 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            color: #a855f7; /* Fallback color for accessibility */
             text-decoration: none;
-            transition: opacity 0.2s;
+            font-weight: 800;
+            letter-spacing: -0.5px;
+            transition: all 0.3s ease;
+            filter: drop-shadow(0 0 20px rgba(168, 85, 247, 0.4));
+            position: relative;
         }
         
         .site-name:hover {
-            opacity: 0.8;
+            transform: translateY(-2px);
+            filter: drop-shadow(0 0 30px rgba(168, 85, 247, 0.6)) brightness(1.15);
         }
         
         .header-content {
@@ -192,82 +159,6 @@
             gap: 10px;
         }
         
-        .btn-search {
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            padding: 8px 16px;
-            background: linear-gradient(135deg, #667eea, #764ba2);
-            color: #fff;
-            border-radius: 6px;
-            text-decoration: none;
-            font-weight: 600;
-            font-size: 14px;
-            transition: all 0.2s;
-        }
-        
-        .btn-search:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
-        }
-        
-        .search-icon {
-            font-size: 16px;
-        }
-        
-        /* Mirrors Button Styles */
-        .mirrors-menu-container {
-            position: relative;
-        }
-        
-        .btn-mirrors {
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            padding: 8px 16px;
-            background: linear-gradient(135deg, #00b894, #00d9a5);
-            color: #fff;
-            border: none;
-            border-radius: 6px;
-            font-weight: 600;
-            font-size: 14px;
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-        
-        .btn-mirrors:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(0, 184, 148, 0.4);
-        }
-        
-        .mirrors-icon {
-            font-size: 16px;
-        }
-        
-        .mirrors-dropdown {
-            position: absolute;
-            top: calc(100% + 8px);
-            right: 0;
-            min-width: 280px;
-            background: var(--surface);
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
-            opacity: 0;
-            visibility: hidden;
-            transform: translateY(-10px);
-            transition: all 0.2s ease;
-            z-index: 1000;
-            max-height: 80vh;
-            overflow-y: auto;
-        }
-        
-        .mirrors-dropdown.show {
-            opacity: 1;
-            visibility: visible;
-            transform: translateY(0);
-        }
-        
         .dropdown-header {
             padding: 12px 16px;
             font-weight: 700;
@@ -278,18 +169,24 @@
             border-radius: 8px 8px 0 0;
         }
         
-        .mirror-item:hover {
-            background: rgba(0, 184, 148, 0.1);
-            color: #00d9a5;
-        }
         
-        .btn-login, .btn-register {
+        .btn-login, .btn-register, .btn-search-simple {
             padding: 8px 16px;
             border-radius: 6px;
             text-decoration: none;
             font-weight: 600;
             font-size: 14px;
             transition: all 0.2s;
+        }
+        
+        .btn-search-simple {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: #fff;
+        }
+        
+        .btn-search-simple:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
         }
         
         .btn-login {
@@ -516,11 +413,10 @@
             }
             
             .user-dropdown {
-                right: -10px;
-            }
-            
-            .mirrors-dropdown {
-                right: -10px;
+                right: 0;
+                left: auto;
+                min-width: 220px;
+                max-width: calc(100vw - 20px);
             }
         }
         
@@ -847,46 +743,6 @@
                     console.error('Error loading user stats:', error);
                     statsContainer.innerHTML = '<div class="stats-loading">Stats unavailable</div>';
                 }
-            }
-            
-            // Mirrors dropdown functionality
-            const mirrorsButton = document.getElementById('mirrorsButton');
-            const mirrorsDropdown = document.getElementById('mirrorsDropdown');
-            
-            if (mirrorsButton && mirrorsDropdown) {
-                // Toggle dropdown on button click
-                mirrorsButton.addEventListener('click', function(e) {
-                    e.stopPropagation();
-                    const isExpanded = mirrorsButton.getAttribute('aria-expanded') === 'true';
-                    
-                    // Close user menu if open (defined earlier in this DOMContentLoaded handler)
-                    const userMenuButton = document.getElementById('userMenuButton');
-                    const userDropdown = document.getElementById('userDropdown');
-                    if (userMenuButton && userDropdown) {
-                        userMenuButton.setAttribute('aria-expanded', 'false');
-                        userDropdown.classList.remove('show');
-                    }
-                    
-                    mirrorsButton.setAttribute('aria-expanded', !isExpanded);
-                    mirrorsDropdown.classList.toggle('show');
-                });
-                
-                // Close dropdown when clicking outside
-                document.addEventListener('click', function(e) {
-                    if (!mirrorsButton.contains(e.target) && !mirrorsDropdown.contains(e.target)) {
-                        mirrorsButton.setAttribute('aria-expanded', 'false');
-                        mirrorsDropdown.classList.remove('show');
-                    }
-                });
-                
-                // Close dropdown when pressing Escape
-                document.addEventListener('keydown', function(e) {
-                    if (e.key === 'Escape' && mirrorsDropdown.classList.contains('show')) {
-                        mirrorsButton.setAttribute('aria-expanded', 'false');
-                        mirrorsDropdown.classList.remove('show');
-                        mirrorsButton.focus();
-                    }
-                });
             }
         });
     </script>

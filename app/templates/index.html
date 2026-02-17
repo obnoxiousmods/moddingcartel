@@ -1,9 +1,78 @@
 {% extends "base.html" %}
 
 {% block content %}
-<link rel="stylesheet" href="{{ url_for('static', path='css/custom-dropdown.css') }}">
-<link rel="stylesheet" href="{{ url_for('static', path='css/advanced-filters.css') }}">
 <div class="container">
+    <!-- Primary Action Buttons - Search and Mirrors -->
+    <div class="primary-actions-section">
+        <h2 class="primary-actions-title">🎮 Get Started</h2>
+        <div class="primary-actions-grid">
+            <a href="/search" class="btn-primary-action btn-search-primary">
+                <span class="btn-icon">🔍</span>
+                <span class="btn-content">
+                    <span class="btn-title">Search Games</span>
+                    <span class="btn-description">Browse our entire collection</span>
+                </span>
+            </a>
+            <div class="btn-primary-action btn-mirrors-primary" id="mirrorsPrimaryButton">
+                <span class="btn-icon">🌐</span>
+                <span class="btn-content">
+                    <span class="btn-title">Mirror Sites</span>
+                    <span class="btn-description">Alternative access points</span>
+                </span>
+                <div class="mirrors-primary-dropdown" id="mirrorsPrimaryDropdown">
+                    <a href="https://swdl.obnoxious.lol" target="_blank" rel="noopener noreferrer" class="mirror-link">
+                        <span class="mirror-icon">🌐</span>
+                        <span>swdl.obnoxious.lol</span>
+                    </a>
+                    <a href="https://downloader.obnoxious.lol" target="_blank" rel="noopener noreferrer" class="mirror-link">
+                        <span class="mirror-icon">🌐</span>
+                        <span>downloader.obnoxious.lol</span>
+                    </a>
+                    <a href="https://swdld.obnoxious.lol" target="_blank" rel="noopener noreferrer" class="mirror-link">
+                        <span class="mirror-icon">🌐</span>
+                        <span>swdld.obnoxious.lol</span>
+                    </a>
+                    <div class="mirror-divider"></div>
+                    <a href="https://moddingcartel.com" target="_blank" rel="noopener noreferrer" class="mirror-link">
+                        <span class="mirror-icon">🌐</span>
+                        <span>moddingcartel.com</span>
+                    </a>
+                    <a href="https://www.moddingcartel.com" target="_blank" rel="noopener noreferrer" class="mirror-link">
+                        <span class="mirror-icon">🌐</span>
+                        <span>www.moddingcartel.com</span>
+                    </a>
+                    <div class="mirror-divider"></div>
+                    <a href="https://nswfiles.com" target="_blank" rel="noopener noreferrer" class="mirror-link">
+                        <span class="mirror-icon">🌐</span>
+                        <span>nswfiles.com</span>
+                    </a>
+                    <a href="https://www.nswfiles.com" target="_blank" rel="noopener noreferrer" class="mirror-link">
+                        <span class="mirror-icon">🌐</span>
+                        <span>www.nswfiles.com</span>
+                    </a>
+                    <div class="mirror-divider"></div>
+                    <a href="http://cartelonsedxwqsmpdzqaxgs25zsup5gi2thiizuehgwpfrmds5wosqd.onion" target="_blank" rel="noopener noreferrer" class="mirror-link">
+                        <span class="mirror-icon">🧅</span>
+                        <span>Tor Hidden Service</span>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Links Section at the Top -->
+    <div class="quick-links-section">
+        <a href="https://chat.obnoxious.lol" target="_blank" rel="noopener noreferrer" class="btn-chat-hero">
+            💬 Join Chat/IRC
+        </a>
+        <a href="https://discord.gg/qgaMVZ26Ks" target="_blank" rel="noopener noreferrer" class="btn-discord">
+            🎮 Join Discord
+        </a>
+        <a href="/api-docs" class="btn-api-docs">
+            📖 API Documentation
+        </a>
+    </div>
+
     <!-- Moderator Actions Section -->
     {% if is_moderator %}
     <div class="mod-actions-section">
@@ -150,139 +219,6 @@
                     </a>
                 </div>
             </div>
-        </div>
-    </div>
-    
-    <!-- Chat Button for Non-Moderators -->
-    <div class="chat-section">
-        <a href="https://chat.obnoxious.lol" target="_blank" rel="noopener noreferrer" class="btn-chat-hero">
-            💬 Join Chat/IRC
-        </a>
-        <a href="https://discord.gg/qgaMVZ26Ks" target="_blank" rel="noopener noreferrer" class="btn-discord">
-            🎮 Join Discord
-        </a>
-        <a href="/api-docs" class="btn-api-docs">
-            📖 API Documentation
-        </a>
-    </div>
-    
-
-    <!-- Search Section -->
-    <div class="search-section">
-        <h2 class="search-title">Find Your Game</h2>
-        <p class="search-subtitle">Search through our collection of Nintendo Switch games</p>
-        
-        <div class="search-box">
-            <input 
-                type="text" 
-                id="search-input" 
-                class="search-input" 
-                placeholder="Type game name to search..."
-                autocomplete="off"
-            >
-        </div>
-    </div>
-
-    <!-- Results Section -->
-    <div class="results-section">
-        <div class="results-header">
-            <h3>Results</h3>
-            <div class="results-controls">
-                <label for="sort-select" class="sort-label">Sort by:</label>
-                <select id="sort-select" class="sort-select filter-select">
-                    <option value="name">Name (A-Z)</option>
-                    <option value="recent">Most Recently Uploaded</option>
-                    <option value="downloads" selected>Most Downloads</option>
-                    <option value="size">Biggest to Smallest</option>
-                    <option value="likes">Most Likes</option>
-                    <option value="dislikes">Most Dislikes</option>
-                    <option value="comments">Most Comments</option>
-                </select>
-                <div id="hash-count" class="hash-count">Loading...</div>
-                <div id="results-count" class="results-count">Loading...</div>
-            </div>
-        </div>
-
-        <!-- Advanced Filters Section -->
-        <div class="filters-panel">
-            <button class="filters-toggle" id="filters-toggle">
-                <svg class="filter-icon" width="18" height="18" viewBox="0 0 24 24" fill="none">
-                    <path d="M3 4h18M3 12h12M3 20h6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-                </svg>
-                <span>Advanced Filters</span>
-                <svg class="toggle-arrow" width="16" height="16" viewBox="0 0 16 16" fill="none">
-                    <path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                </svg>
-            </button>
-            
-            <div class="filters-content" id="filters-content">
-                <div class="filters-grid">
-                    <div class="filter-item">
-                        <label for="file-type-filter">File Type:</label>
-                        <select id="file-type-filter" class="filter-select">
-                            <option value="all">All Types</option>
-                            <option value="nsp">NSP</option>
-                            <option value="nsz">NSZ</option>
-                            <option value="xci">XCI</option>
-                        </select>
-                    </div>
-
-                    <div class="filter-item">
-                        <label for="size-filter">File Size:</label>
-                        <select id="size-filter" class="filter-select">
-                            <option value="all">All Sizes</option>
-                            <option value="small">< 1 GB</option>
-                            <option value="medium">1-5 GB</option>
-                            <option value="large">5-10 GB</option>
-                            <option value="xlarge">> 10 GB</option>
-                        </select>
-                    </div>
-
-                    <div class="filter-item">
-                        <label for="date-filter">Upload Date:</label>
-                        <select id="date-filter" class="filter-select">
-                            <option value="all">All Time</option>
-                            <option value="today">Today</option>
-                            <option value="week">This Week</option>
-                            <option value="month">This Month</option>
-                            <option value="3months">Last 3 Months</option>
-                            <option value="year">This Year</option>
-                        </select>
-                    </div>
-
-                    <div class="filter-item">
-                        <label for="downloads-filter">Popularity:</label>
-                        <select id="downloads-filter" class="filter-select">
-                            <option value="all">All</option>
-                            <option value="popular">100+ Downloads</option>
-                            <option value="trending">50-99 Downloads</option>
-                            <option value="new">< 50 Downloads</option>
-                        </select>
-                    </div>
-                </div>
-
-                <div class="filters-actions">
-                    <button class="btn-apply-filters" id="apply-filters">Apply Filters</button>
-                    <button class="btn-clear-filters" id="clear-filters">Clear All</button>
-                </div>
-            </div>
-        </div>
-
-        <!-- Loading State -->
-        <div id="loading-state" class="loading">
-            Loading entries
-        </div>
-
-        <!-- Results Grid -->
-        <div id="results-grid" class="results-grid hidden">
-            <!-- Results will be dynamically inserted here -->
-        </div>
-
-        <!-- Empty State -->
-        <div id="empty-state" class="empty-state hidden">
-            <div class="empty-state-icon">🔍</div>
-            <div class="empty-state-title">No Results Found</div>
-            <div class="empty-state-message">Try adjusting your search terms</div>
         </div>
     </div>
 </div>
@@ -449,41 +385,6 @@
     font-weight: 500;
 }
 
-/* Results Controls Styles */
-.results-controls {
-    display: flex;
-    align-items: center;
-    gap: 15px;
-    flex-wrap: wrap;
-}
-
-.sort-label {
-    font-size: 0.9rem;
-    color: #666;
-    font-weight: 500;
-}
-
-.sort-select {
-    padding: 6px 12px;
-    border: 1px solid #ddd;
-    border-radius: 6px;
-    background: white;
-    font-size: 0.9rem;
-    color: #333;
-    cursor: pointer;
-    transition: border-color 0.2s;
-}
-
-.sort-select:hover {
-    border-color: #667eea;
-}
-
-.sort-select:focus {
-    outline: none;
-    border-color: #667eea;
-    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
-}
-
 @media (max-width: 768px) {
     .stats-grid {
         grid-template-columns: repeat(2, 1fr);
@@ -502,9 +403,33 @@ window.userRole = {
     isModerator: {{ 'true' if is_moderator else 'false' }},
     isAdmin: {{ 'true' if request.session.get('is_admin', False) else 'false' }}
 };
-</script>
 
-<script src="{{ url_for('static', path='js/custom-dropdown.js') }}"></script>
-<script src="{{ url_for('static', path='js/advanced-filters.js') }}"></script>
-<script src="{{ url_for('static', path='js/search.js') }}"></script>
+// Mirrors primary dropdown functionality
+document.addEventListener('DOMContentLoaded', function() {
+    const mirrorsPrimaryButton = document.getElementById('mirrorsPrimaryButton');
+    const mirrorsPrimaryDropdown = document.getElementById('mirrorsPrimaryDropdown');
+    
+    if (mirrorsPrimaryButton && mirrorsPrimaryDropdown) {
+        // Toggle dropdown on button click
+        mirrorsPrimaryButton.addEventListener('click', function(e) {
+            e.stopPropagation();
+            mirrorsPrimaryDropdown.classList.toggle('show');
+        });
+        
+        // Close dropdown when clicking outside
+        document.addEventListener('click', function(e) {
+            if (!mirrorsPrimaryButton.contains(e.target) && !mirrorsPrimaryDropdown.contains(e.target)) {
+                mirrorsPrimaryDropdown.classList.remove('show');
+            }
+        });
+        
+        // Close dropdown when pressing Escape
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape' && mirrorsPrimaryDropdown.classList.contains('show')) {
+                mirrorsPrimaryDropdown.classList.remove('show');
+            }
+        });
+    }
+});
+</script>
 {% endblock %}
