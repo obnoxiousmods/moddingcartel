@@ -111,16 +111,16 @@ class SphairaDownloader:
         if method == "ftp":
             self.progress_bar = ProgressBarWithSpeed(
                 "Uploading via FTP",
-                max=100, # Calculate the max based on file size
-                suffix="%(percent)d%% - %(elapsed_td)s - %(eta_td)s",
+                max=max_chunks,
+                suffix="%(percent)d%% - %(speed_mbps).2f MB/s - %(elapsed_td)s - ETA: %(eta_td)s",
             )
             return await self._uploadViaFTP(fileName=fileName)
 
         if method == "mtp":
             self.progress_bar = ProgressBarWithSpeed(
                 "Uploading via MTP",
-                max=100,
-                suffix="%(percent)d%% - %(elapsed_td)s - %(eta_td)s",
+                max=max_chunks,
+                suffix="%(percent)d%% - %(speed_mbps).2f MB/s - %(elapsed_td)s - ETA: %(eta_td)s",
             )
             return await self._uploadViaMTP(fileName=fileName)
 
