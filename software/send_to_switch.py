@@ -337,7 +337,7 @@ class SendToSwitchClient:
     async def upload_with_progress(self, filename: str, progress_callback):
         """Upload local game with progress reporting"""
         result = await self.sphaira.uploadLocalGame(
-            fileName=filename, 
+            fileName=filename,
             progress_callback=progress_callback
         )
         return result

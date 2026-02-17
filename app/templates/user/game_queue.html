@@ -390,6 +390,7 @@
 <script>
 // Auto-refresh queue status every 3 seconds
 let autoRefreshInterval = null;
+let lastQueueState = {};
 
 async function refreshQueue() {
     try {
@@ -397,6 +398,23 @@ async function refreshQueue() {
         const data = await response.json();
         
         if (data.success) {
+            // Check if any items disappeared (completed/failed)
+            const currentQueueIds = new Set(data.queue.map(item => item.queue_item_id));
+            const hadProcessingItems = Object.keys(lastQueueState).some(id => lastQueueState[id] === 'processing');
+            const noLongerPresent = Object.keys(lastQueueState).some(id => !currentQueueIds.has(id));
+            
+            // If we had processing items and some are now gone, reload to show completed/failed status
+            if (hadProcessingItems && noLongerPresent) {
+                location.reload();
+                return;
+            }
+            
+            // Update the last known state
+            lastQueueState = {};
+            data.queue.forEach(item => {
+                lastQueueState[item.queue_item_id] = item.status;
+            });
+            
             updateQueueDisplay(data.queue);
         }
     } catch (error) {

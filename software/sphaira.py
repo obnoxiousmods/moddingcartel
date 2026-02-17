@@ -153,7 +153,7 @@ class SphairaDownloader:
                                 break
                             await stream.write(chunk)
                             chunk_size = len(chunk)
-                            
+
                             if pbar:
                                 pbar.update(chunk_size)
                             elif progress_callback:
@@ -263,7 +263,7 @@ class SphairaDownloader:
                                 await ftp_stream.write(chunk)
                                 chunk_size = len(chunk)
                                 bytes_transferred += chunk_size
-                                
+
                                 if pbar:
                                     pbar.update(chunk_size)
                                 elif progress_callback:
@@ -272,7 +272,7 @@ class SphairaDownloader:
             if pbar:
                 pbar.close()
                 tqdm.write(f"Stream finished: {filename}  ({pbar.n / (1024*1024):.1f} MiB)")
-            
+
             return {
                 "success": True,
                 "size_bytes": bytes_transferred if not pbar else pbar.n,
