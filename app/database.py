@@ -37,6 +37,7 @@ class Database:
         self.comments_collection: Optional[StandardCollection] = None
         self.likes_collection: Optional[StandardCollection] = None
         self.comment_likes_collection: Optional[StandardCollection] = None
+        self.send_queue_collection: Optional[StandardCollection] = None
 
     async def connect(self):
         """Connect to ArangoDB and initialize database/collections"""
@@ -171,6 +172,13 @@ class Database:
                 logger.info("Created collection: comment_likes")
             else:
                 self.comment_likes_collection = self.db.collection("comment_likes")
+
+            # Create send_queue collection if it doesn't exist
+            if not await self.db.has_collection("send_queue"):
+                self.send_queue_collection = await self.db.create_collection("send_queue")
+                logger.info("Created collection: send_queue")
+            else:
+                self.send_queue_collection = self.db.collection("send_queue")
 
             logger.info("Successfully connected to ArangoDB")
 
@@ -1991,6 +1999,287 @@ class Database:
         except Exception as e:
             logger.error(f"Error fetching user comment vote: {e}")
             return None
+
+    async def add_to_send_queue(self, user_id: str, entry_id: str) -> bool:
+        """Add an entry to user's send queue"""
+        try:
+            # Check if entry is already in queue
+            cursor = await self.db.aql.execute(
+                """
+                FOR item IN send_queue
+                FILTER item.user_id == @user_id AND item.entry_id == @entry_id AND item.status IN ['pending', 'processing']
+                RETURN item
+                """,
+                bind_vars={"user_id": user_id, "entry_id": entry_id}
+            )
+
+            exists = False
+            async with cursor:
+                async for _ in cursor:
+                    exists = True
+                    break
+
+            if exists:
+                logger.info(f"Entry {entry_id} already in queue for user {user_id}")
+                return True  # Already in queue, return success
+
+            # Add to queue
+            queue_item = {
+                "user_id": user_id,
+                "entry_id": entry_id,
+                "status": "pending",  # pending, processing, completed, failed
+                "created_at": datetime.now(timezone.utc).isoformat(),
+                "updated_at": datetime.now(timezone.utc).isoformat(),
+            }
+
+            result = await self.send_queue_collection.insert(queue_item)
+            logger.info(f"Added entry {entry_id} to send queue for user {user_id}: {result['_key']}")
+            return True
+
+        except Exception as e:
+            logger.error(f"Error adding to send queue: {e}")
+            return False
+
+    async def get_send_queue(self, user_id: str) -> List[Dict[str, Any]]:
+        """Get user's send queue items with entry details"""
+        try:
+            cursor = await self.db.aql.execute(
+                """
+                FOR item IN send_queue
+                FILTER item.user_id == @user_id AND item.status IN ['pending', 'processing']
+                SORT item.created_at ASC
+                LET entry = DOCUMENT('entries', item.entry_id)
+                RETURN {
+                    queue_item_id: item._key,
+                    entry_id: item.entry_id,
+                    entry_name: entry.name,
+                    entry_source: entry.source,
+                    entry_size: entry.size,
+                    status: item.status,
+                    created_at: item.created_at,
+                    updated_at: item.updated_at,
+                    progress_percent: item.progress_percent,
+                    bytes_transferred: item.bytes_transferred,
+                    transfer_speed: item.transfer_speed,
+                    error_message: item.error_message
+                }
+                """,
+                bind_vars={"user_id": user_id}
+            )
+
+            items = []
+            async with cursor:
+                async for item in cursor:
+                    items.append(item)
+
+            return items
+
+        except Exception as e:
+            logger.error(f"Error fetching send queue: {e}")
+            return []
+
+    async def get_all_send_queue_items(self, user_id: str) -> List[Dict[str, Any]]:
+        """Get all send queue items for a user (including completed/failed)"""
+        try:
+            cursor = await self.db.aql.execute(
+                """
+                FOR item IN send_queue
+                FILTER item.user_id == @user_id
+                SORT item.created_at DESC
+                LET entry = DOCUMENT('entries', item.entry_id)
+                RETURN {
+                    queue_item_id: item._key,
+                    entry_id: item.entry_id,
+                    entry_name: entry.name,
+                    entry_source: entry.source,
+                    entry_size: entry.size,
+                    status: item.status,
+                    created_at: item.created_at,
+                    updated_at: item.updated_at,
+                    progress_percent: item.progress_percent,
+                    bytes_transferred: item.bytes_transferred,
+                    transfer_speed: item.transfer_speed,
+                    error_message: item.error_message
+                }
+                """,
+                bind_vars={"user_id": user_id}
+            )
+
+            items = []
+            async with cursor:
+                async for item in cursor:
+                    items.append(item)
+
+            return items
+
+        except Exception as e:
+            logger.error(f"Error fetching all send queue items: {e}")
+            return []
+
+    async def update_send_queue_item(self, user_id: str, queue_item_id: str, status: str) -> bool:
+        """Update status of a send queue item"""
+        try:
+            # First verify the item belongs to the user
+            cursor = await self.db.aql.execute(
+                """
+                FOR item IN send_queue
+                FILTER item._key == @queue_item_id AND item.user_id == @user_id
+                RETURN item
+                """,
+                bind_vars={"queue_item_id": queue_item_id, "user_id": user_id}
+            )
+
+            exists = False
+            async with cursor:
+                async for _ in cursor:
+                    exists = True
+                    break
+
+            if not exists:
+                logger.warning(f"Queue item {queue_item_id} not found for user {user_id}")
+                return False
+
+            # Update the status
+            result = await self.send_queue_collection.update({
+                "_key": queue_item_id,
+                "status": status,
+                "updated_at": datetime.now(timezone.utc).isoformat(),
+            })
+
+            if result and not result.get("error"):
+                logger.info(f"Updated queue item {queue_item_id} to status {status}")
+
+                # If completed or failed, we could optionally delete it after some time
+                # For now, we'll keep it for history
+
+                return True
+            else:
+                logger.error(f"Error updating queue item: {result.get('errorMessage', 'Unknown error')}")
+                return False
+
+        except Exception as e:
+            logger.error(f"Error updating send queue item: {e}")
+            return False
+
+    async def update_send_queue_progress(
+        self,
+        user_id: str,
+        queue_item_id: str,
+        progress_percent: Optional[int] = None,
+        bytes_transferred: Optional[int] = None,
+        transfer_speed: Optional[float] = None,
+        status: Optional[str] = None,
+        error_message: Optional[str] = None
+    ) -> bool:
+        """Update progress information for a send queue item"""
+        try:
+            # First verify the item belongs to the user
+            cursor = await self.db.aql.execute(
+                """
+                FOR item IN send_queue
+                FILTER item._key == @queue_item_id AND item.user_id == @user_id
+                RETURN item
+                """,
+                bind_vars={"queue_item_id": queue_item_id, "user_id": user_id}
+            )
+
+            exists = False
+            async with cursor:
+                async for _ in cursor:
+                    exists = True
+                    break
+
+            if not exists:
+                logger.warning(f"Queue item {queue_item_id} not found for user {user_id}")
+                return False
+
+            # Build update document
+            update_doc = {
+                "_key": queue_item_id,
+                "updated_at": datetime.now(timezone.utc).isoformat(),
+            }
+
+            if progress_percent is not None:
+                update_doc["progress_percent"] = progress_percent
+            if bytes_transferred is not None:
+                update_doc["bytes_transferred"] = bytes_transferred
+            if transfer_speed is not None:
+                update_doc["transfer_speed"] = transfer_speed
+            if status is not None:
+                update_doc["status"] = status
+            if error_message is not None:
+                update_doc["error_message"] = error_message
+
+            # Update the item
+            result = await self.send_queue_collection.update(update_doc)
+
+            if result and not result.get("error"):
+                return True
+            else:
+                logger.error(f"Error updating queue progress: {result.get('errorMessage', 'Unknown error')}")
+                return False
+
+        except Exception as e:
+            logger.error(f"Error updating send queue progress: {e}")
+            return False
+
+    async def delete_send_queue_item(self, user_id: str, queue_item_id: str) -> bool:
+        """Delete a send queue item"""
+        try:
+            # First verify the item belongs to the user
+            cursor = await self.db.aql.execute(
+                """
+                FOR item IN send_queue
+                FILTER item._key == @queue_item_id AND item.user_id == @user_id
+                RETURN item
+                """,
+                bind_vars={"queue_item_id": queue_item_id, "user_id": user_id}
+            )
+
+            exists = False
+            async with cursor:
+                async for _ in cursor:
+                    exists = True
+                    break
+
+            if not exists:
+                logger.warning(f"Queue item {queue_item_id} not found for user {user_id}")
+                return False
+
+            # Delete the item
+            await self.send_queue_collection.delete(queue_item_id)
+            logger.info(f"Deleted queue item {queue_item_id} for user {user_id}")
+            return True
+
+        except Exception as e:
+            logger.error(f"Error deleting send queue item: {e}")
+            return False
+
+    async def clear_send_queue(self, user_id: str) -> bool:
+        """Clear all items from user's send queue"""
+        try:
+            # Delete all queue items for the user
+            cursor = await self.db.aql.execute(
+                """
+                FOR item IN send_queue
+                FILTER item.user_id == @user_id
+                REMOVE item IN send_queue
+                RETURN OLD
+                """,
+                bind_vars={"user_id": user_id}
+            )
+
+            count = 0
+            async with cursor:
+                async for _ in cursor:
+                    count += 1
+
+            logger.info(f"Cleared {count} queue items for user {user_id}")
+            return True
+
+        except Exception as e:
+            logger.error(f"Error clearing send queue: {e}")
+            return False
 
 
 # Global database instance

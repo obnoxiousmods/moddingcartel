@@ -1,0 +1,422 @@
+#!/usr/bin/env python3
+"""
+Send to Switch Client
+
+A client application that polls ModdingCartel for games to send to Nintendo Switch
+via Sphaira FTP server. Features a TUI (Text User Interface) for monitoring.
+"""
+import asyncio
+import logging
+import sys
+import time
+from pathlib import Path
+from typing import Optional
+
+import yaml
+from rich.console import Console
+from rich.layout import Layout
+from rich.live import Live
+from rich.panel import Panel
+from rich.table import Table
+from rich.text import Text
+
+# Add parent directory to path to import local modules
+sys.path.insert(0, str(Path(__file__).parent.parent))
+
+from software.cartel import ModdingCartel
+from software.sphaira import SphairaDownloader
+
+# Setup logging
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+    handlers=[
+        logging.FileHandler("send_to_switch.log"),
+        logging.StreamHandler(),
+    ],
+)
+logger = logging.getLogger(__name__)
+
+# Configuration
+CONFIG_FILE = Path.home() / ".config" / "send_to_switch" / "config.yaml"
+POLL_INTERVAL = 3  # seconds
+
+
+class SendToSwitchClient:
+    """Client for sending games to Switch via Sphaira"""
+
+    def __init__(self, config_path: Path = CONFIG_FILE):
+        self.config_path = config_path
+        self.config = {}
+        self.api_client: Optional[ModdingCartel] = None
+        self.sphaira: Optional[SphairaDownloader] = None
+        self.running = False
+        self.current_task = None
+        self.stats = {
+            "total_sent": 0,
+            "total_failed": 0,
+            "current_queue_size": 0,
+            "last_poll_time": None,
+            "status": "Initializing...",
+        }
+        self.console = Console()
+
+    def load_config(self) -> bool:
+        """Load configuration from YAML file"""
+        try:
+            if self.config_path.exists():
+                with open(self.config_path, "r") as f:
+                    self.config = yaml.safe_load(f) or {}
+                logger.info(f"Configuration loaded from {self.config_path}")
+                return True
+            else:
+                logger.info("No configuration file found")
+                return False
+        except Exception as e:
+            logger.error(f"Error loading configuration: {e}")
+            return False
+
+    def save_config(self):
+        """Save configuration to YAML file"""
+        try:
+            self.config_path.parent.mkdir(parents=True, exist_ok=True)
+            with open(self.config_path, "w") as f:
+                yaml.dump(self.config, f, default_flow_style=False)
+            logger.info(f"Configuration saved to {self.config_path}")
+        except Exception as e:
+            logger.error(f"Error saving configuration: {e}")
+
+    def setup_authentication(self):
+        """Setup authentication with ModdingCartel"""
+        # Check if we have an API key
+        if "api_key" in self.config:
+            logger.info("Using existing API key")
+            self.api_client = ModdingCartel(
+                    base_url=self.config.get("base_url", "http://localhost:6069"),
+                api_key=self.config["api_key"],
+            )
+            return True
+
+        # Prompt for credentials
+        self.console.print("\n[bold cyan]ModdingCartel Authentication[/bold cyan]")
+        self.console.print("No API key found. Please login to create one.\n")
+
+        username = self.console.input("[yellow]Username:[/yellow] ").strip()
+        password = self.console.input("[yellow]Password:[/yellow] ", password=True).strip()
+
+        if not username or not password:
+            self.console.print("[red]Username and password are required[/red]")
+            return False
+
+        # Get base URL
+        base_url = self.console.input(
+            "[yellow]Server URL:[/yellow] [dim](default: http://localhost:6069)[/dim] "
+        ).strip() or "http://localhost:6069"
+
+        try:
+            self.api_client = ModdingCartel(base_url=base_url)
+            result = self.api_client.login(username, password)
+
+            if result.get("success"):
+                self.config["api_key"] = result["api_key"]
+                self.config["base_url"] = base_url
+                self.save_config()
+                self.console.print("[green]✓ Authentication successful![/green]")
+                logger.info("Authentication successful, API key saved")
+                return True
+            else:
+                self.console.print(f"[red]✗ Login failed: {result.get('error')}[/red]")
+                return False
+
+        except Exception as e:
+            self.console.print(f"[red]✗ Error during login: {e}[/red]")
+            logger.error(f"Login error: {e}")
+            return False
+
+    def setup_sphaira(self, ip_address: Optional[str] = None):
+        """Setup Sphaira downloader"""
+        # Get IP address from config or parameter
+        if not ip_address:
+            ip_address = self.config.get("switch_ip")
+
+        self.sphaira = SphairaDownloader(ip_address=ip_address, debug=True)
+        logger.info(f"Sphaira downloader initialized with IP: {ip_address or 'auto-discover'}")
+
+    async def discover_switch(self) -> bool:
+        """Discover Switch on the network"""
+        try:
+            self.stats["status"] = "Discovering Switch on network..."
+            logger.info("Starting Switch discovery...")
+
+            found = await self.sphaira.discover_and_connect()
+
+            if found:
+                self.config["switch_ip"] = self.sphaira.ip_address
+                self.save_config()
+                self.stats["status"] = f"Connected to Switch at {self.sphaira.ip_address}"
+                logger.info(f"Switch found at {self.sphaira.ip_address}")
+                return True
+            else:
+                self.stats["status"] = "Switch not found on network"
+                logger.warning("Switch not found on network")
+                return False
+
+        except Exception as e:
+            self.stats["status"] = f"Error during discovery: {e}"
+            logger.error(f"Discovery error: {e}")
+            return False
+
+    async def process_queue(self):
+        """Process the send queue"""
+        try:
+            # Get queue from server
+            self.stats["status"] = "Fetching queue..."
+            queue = self.api_client.get_send_queue()
+            self.stats["current_queue_size"] = len(queue)
+            self.stats["last_poll_time"] = time.time()
+
+            if not queue:
+                self.stats["status"] = "Queue is empty, waiting..."
+                return
+
+            # Process first item in queue
+            item = queue[0]
+            queue_item_id = item["queue_item_id"]
+            entry_name = item["entry_name"]
+            entry_source = item["entry_source"]
+            entry_size = item.get("entry_size", 0)
+
+            logger.info(f"Processing queue item: {entry_name}")
+            self.stats["status"] = f"Sending: {entry_name}"
+            self.current_task = entry_name
+
+            # Mark as processing with initial progress
+            self.api_client.update_queue_progress(
+                queue_item_id=queue_item_id,
+                status="processing",
+                progress_percent=0,
+                bytes_transferred=0,
+            )
+
+            # Setup progress tracking
+            last_progress_update = time.time()
+            progress_update_interval = 2  # Update every 2 seconds
+
+            # Create a custom progress callback
+            bytes_transferred = 0
+            last_bytes = 0
+            last_time = time.time()
+
+            async def report_progress(chunk_size: int):
+                nonlocal bytes_transferred, last_bytes, last_time, last_progress_update
+                bytes_transferred += chunk_size
+                current_time = time.time()
+
+                # Calculate transfer speed
+                time_delta = current_time - last_time
+                if time_delta > 0:
+                    transfer_speed = (bytes_transferred - last_bytes) / time_delta
+                else:
+                    transfer_speed = 0
+
+                # Calculate progress percentage
+                if entry_size > 0:
+                    progress_percent = int((bytes_transferred / entry_size) * 100)
+                else:
+                    progress_percent = 0
+
+                # Report progress every N seconds
+                if current_time - last_progress_update >= progress_update_interval:
+                    try:
+                        self.api_client.update_queue_progress(
+                            queue_item_id=queue_item_id,
+                            progress_percent=min(progress_percent, 100),
+                            bytes_transferred=bytes_transferred,
+                            transfer_speed=transfer_speed,
+                        )
+                        last_progress_update = current_time
+                    except Exception as e:
+                        logger.warning(f"Failed to update progress: {e}")
+
+                last_bytes = bytes_transferred
+                last_time = current_time
+
+            # Check if file is local or HTTP
+            try:
+                if entry_source.startswith("http://") or entry_source.startswith("https://"):
+                    # Stream from HTTP with progress reporting
+                    result = await self.stream_with_progress(
+                        entry_source, entry_name, report_progress
+                    )
+                else:
+                    # Upload from local file with progress reporting
+                    result = await self.upload_with_progress(
+                        entry_name, report_progress
+                    )
+
+                # Update status based on result
+                if result.get("success"):
+                    self.api_client.update_queue_progress(
+                        queue_item_id=queue_item_id,
+                        status="completed",
+                        progress_percent=100,
+                        bytes_transferred=result.get("size_bytes", bytes_transferred),
+                    )
+                    self.stats["total_sent"] += 1
+                    self.stats["status"] = f"✓ Completed: {entry_name}"
+                    logger.info(f"Successfully sent: {entry_name}")
+                else:
+                    error = result.get("error", "Unknown error")
+                    self.api_client.update_queue_progress(
+                        queue_item_id=queue_item_id,
+                        status="failed",
+                        error_message=error,
+                    )
+                    self.stats["total_failed"] += 1
+                    self.stats["status"] = f"✗ Failed: {entry_name} - {error}"
+                    logger.error(f"Failed to send {entry_name}: {error}")
+
+            except Exception as e:
+                error_msg = str(e)
+                self.api_client.update_queue_progress(
+                    queue_item_id=queue_item_id,
+                    status="failed",
+                    error_message=error_msg,
+                )
+                self.stats["total_failed"] += 1
+                self.stats["status"] = f"✗ Failed: {entry_name} - {error_msg}"
+                logger.error(f"Failed to send {entry_name}: {e}", exc_info=True)
+
+            self.current_task = None
+
+        except Exception as e:
+            self.stats["status"] = f"Error processing queue: {e}"
+            logger.error(f"Queue processing error: {e}", exc_info=True)
+
+    async def stream_with_progress(self, url: str, filename: str, progress_callback):
+        """Stream HTTP game with progress reporting"""
+        # Note: Progress callback integration with sphaira.py is not yet implemented
+        # The sphaira library would need to be modified to accept and call the callback
+        # For now, just call the existing method
+        result = await self.sphaira.streamHttpGame(url=url, filename=filename)
+        return result
+
+    async def upload_with_progress(self, filename: str, progress_callback):
+        """Upload local game with progress reporting"""
+        # Note: Progress callback integration with sphaira.py is not yet implemented
+        # The sphaira library would need to be modified to accept and call the callback
+        # For now, just call the existing method
+        result = await self.sphaira.uploadLocalGame(fileName=filename)
+        return result
+
+    def generate_tui(self) -> Layout:
+        """Generate the TUI layout"""
+        layout = Layout()
+        layout.split_column(
+            Layout(name="header", size=3),
+            Layout(name="body"),
+            Layout(name="footer", size=5),
+        )
+
+        # Header
+        header_text = Text("Send to Switch Client", style="bold cyan", justify="center")
+        layout["header"].update(Panel(header_text))
+
+        # Body - Stats and Status
+        stats_table = Table(show_header=False, box=None, padding=(0, 1))
+        stats_table.add_column("Key", style="cyan")
+        stats_table.add_column("Value", style="white")
+
+        stats_table.add_row("Status:", self.stats["status"])
+        stats_table.add_row("Queue Size:", str(self.stats["current_queue_size"]))
+        stats_table.add_row("Total Sent:", str(self.stats["total_sent"]))
+        stats_table.add_row("Total Failed:", str(self.stats["total_failed"]))
+
+        if self.stats["last_poll_time"]:
+            elapsed = int(time.time() - self.stats["last_poll_time"])
+            stats_table.add_row("Last Poll:", f"{elapsed}s ago")
+
+        if self.current_task:
+            stats_table.add_row("Current Task:", self.current_task)
+
+        if self.sphaira and self.sphaira.ip_address:
+            stats_table.add_row("Switch IP:", self.sphaira.ip_address)
+
+        layout["body"].update(Panel(stats_table, title="Statistics", border_style="green"))
+
+        # Footer - Controls
+        footer_text = Text.from_markup(
+            "[yellow]Press Ctrl+C to stop[/yellow]",
+            justify="center",
+        )
+        layout["footer"].update(Panel(footer_text, border_style="yellow"))
+
+        return layout
+
+    async def run_loop(self):
+        """Main polling loop"""
+        self.running = True
+
+        try:
+            with Live(self.generate_tui(), refresh_per_second=1, screen=True) as live:
+                while self.running:
+                    # Update display
+                    live.update(self.generate_tui())
+
+                    # Process queue
+                    await self.process_queue()
+
+                    # Wait for next poll
+                    await asyncio.sleep(POLL_INTERVAL)
+
+        except KeyboardInterrupt:
+            logger.info("Received interrupt signal, shutting down...")
+            self.stats["status"] = "Shutting down..."
+        finally:
+            self.running = False
+
+    async def run(self):
+        """Run the client"""
+        try:
+            # Load configuration
+            self.load_config()
+
+            # Setup authentication
+            if not self.setup_authentication():
+                return
+
+            # Setup Sphaira
+            self.setup_sphaira()
+
+            # Discover Switch if no IP configured
+            if not self.sphaira.ip_address:
+                self.console.print("\n[yellow]Discovering Switch on network...[/yellow]")
+                if not await self.discover_switch():
+                    self.console.print(
+                        "[red]Failed to discover Switch. Please check your network connection.[/red]"
+                    )
+                    return
+
+            self.console.print("\n[green]✓ Setup complete! Starting polling loop...[/green]")
+            self.console.print(f"[dim]Polling every {POLL_INTERVAL} seconds...[/dim]\n")
+
+            # Run main loop
+            await self.run_loop()
+
+        except Exception as e:
+            logger.error(f"Error running client: {e}", exc_info=True)
+            self.console.print(f"[red]Error: {e}[/red]")
+        finally:
+            # Cleanup
+            if self.api_client:
+                self.api_client.close()
+
+
+async def main():
+    """Main entry point"""
+    client = SendToSwitchClient()
+    await client.run()
+
+
+if __name__ == "__main__":
+    asyncio.run(main())

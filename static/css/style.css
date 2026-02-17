@@ -225,7 +225,7 @@ header h1 {
     border-top: 1px solid var(--border);
 }
 
-.btn-download, .btn-info, .btn-report, .btn-like, .btn-dislike, .btn-comments {
+.btn-download, .btn-info, .btn-report, .btn-like, .btn-dislike, .btn-comments, .btn-send-switch {
     flex: 1;
     padding: 0.5rem 1rem;
     border: none;
@@ -293,6 +293,16 @@ header h1 {
 
 .btn-comments:hover {
     background: rgba(139, 92, 246, 0.2);
+}
+
+.btn-send-switch {
+    background: rgba(34, 211, 238, 0.1);
+    color: #22d3ee;
+    border: 1px solid rgba(34, 211, 238, 0.3);
+}
+
+.btn-send-switch:hover {
+    background: rgba(34, 211, 238, 0.2);
 }
 
 /* Info Modal */

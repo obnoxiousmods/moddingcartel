@@ -12,3 +12,6 @@ qrcode[pil]
 ruff
 aioftp
 progress
+httpx
+tqdm
+rich

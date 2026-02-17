@@ -122,7 +122,8 @@
 // Pass user role information to JavaScript
 window.userRole = {
     isModerator: {{ 'true' if is_moderator else 'false' }},
-    isAdmin: {{ 'true' if request.session.get('is_admin', False) else 'false' }}
+    isAdmin: {{ 'true' if request.session.get('is_admin', False) else 'false' }},
+    isAuthenticated: {{ 'true' if request.session.get('username') else 'false' }}
 };
 </script>
 
