@@ -72,7 +72,7 @@ class SphairaDownloader:
         if method == "ftp":
             self.progress_bar = Bar(
                 "Uploading via FTP",
-                max= # Calculate the max based on file size
+                max=100, # Calculate the max based on file size
                 suffix="%(percent)d%% - %(elapsed_td)s - %(eta_td)s",
             )
             return await self._uploadViaFTP(fileName=fileName)
@@ -80,7 +80,7 @@ class SphairaDownloader:
         if method == "mtp":
             self.progress_bar = Bar(
                 "Uploading via MTP",
-                max=
+                max=100,
                 suffix="%(percent)d%% - %(elapsed_td)s - %(eta_td)s",
             )
             return await self._uploadViaMTP(fileName=fileName)
