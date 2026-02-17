@@ -124,7 +124,7 @@ class ModdingCartel:
         try:
             response = self.client.post(
                 f"{self.base_url}/api/send-queue/update",
-                headers={"X-API-Key": self.api_key},
+                headers={"Authorization": f"Bearer {self.api_key}"},
                 json={"queue_item_id": queue_item_id, "status": status},
             )
 
@@ -185,7 +185,7 @@ class ModdingCartel:
 
             response = self.client.post(
                 f"{self.base_url}/api/send-queue/progress",
-                headers={"X-API-Key": self.api_key},
+                headers={"Authorization": f"Bearer {self.api_key}"},
                 json=payload,
             )
 
@@ -217,7 +217,7 @@ class ModdingCartel:
         try:
             headers = {}
             if self.api_key:
-                headers["X-API-Key"] = self.api_key
+                headers["Authorization"] = f"Bearer {self.api_key}"
 
             response = self.client.get(
                 f"{self.base_url}/api/entries/{entry_id}/info",

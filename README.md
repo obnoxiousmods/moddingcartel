@@ -138,7 +138,7 @@ GET  /api-docs                    # API documentation
 
 Include API key in request header:
 ```
-X-API-Key: your_api_key_here
+Authorization: Bearer your_api_key_here
 ```
 
 **Generate API keys:**
