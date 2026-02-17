@@ -608,7 +608,7 @@ class SphairaDownloader:
         # Use USB if requested
         if method == "usb":
             self.logger.info("Using USB method for local game upload")
-            if not self.usb_device:
+            if not self.usb_conn:
                 if not await self.detect_usb_switch():
                     error_msg = "Switch not found via USB. Please ensure it's connected and in Sphaira/Awoo mode."
                     self.logger.error(error_msg)
@@ -758,7 +758,7 @@ class SphairaDownloader:
         # Use USB if requested
         if method == "usb":
             self.logger.info("Using USB method for HTTP streaming")
-            if not self.usb_device:
+            if not self.usb_conn:
                 if not await self.detect_usb_switch():
                     error_msg = "Switch not found via USB. Please ensure it's connected and in Sphaira/Awoo mode."
                     self.logger.error(error_msg)
