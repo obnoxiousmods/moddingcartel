@@ -63,3 +63,32 @@ jobs:
           2. Enter your ModdingCartel credentials
           3. The app will discover your Switch on the network
           4. Start queuing games to send!
+    
+    - name: Get latest release
+      if: github.event_name == 'workflow_dispatch'
+      id: get_latest_release
+      uses: actions/github-script@v7
+      with:
+        script: |
+          try {
+            const { data: latestRelease } = await github.rest.repos.getLatestRelease({
+              owner: context.repo.owner,
+              repo: context.repo.repo
+            });
+            core.setOutput('upload_url', latestRelease.upload_url);
+            core.setOutput('tag', latestRelease.tag_name);
+            console.log(`Latest release: ${latestRelease.tag_name}`);
+          } catch (error) {
+            if (error.status === 404) {
+              core.setFailed('No releases found. Manual workflow runs require at least one existing release. Please create a release first or push a tag to trigger automatic release creation.');
+            } else {
+              throw error;
+            }
+          }
+    
+    - name: Upload to latest release
+      if: github.event_name == 'workflow_dispatch'
+      uses: softprops/action-gh-release@v1
+      with:
+        tag_name: ${{ steps.get_latest_release.outputs.tag }}
+        files: dist/moddingcartel.exe
