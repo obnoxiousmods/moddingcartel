@@ -52,6 +52,7 @@ class SendToSwitchClient:
         self.sphaira: Optional[SphairaDownloader] = None
         self.running = False
         self.current_task = None
+        self.current_progress_percent = 0
         self.stats = {
             "total_sent": 0,
             "total_failed": 0,
@@ -139,7 +140,8 @@ class SendToSwitchClient:
         if not ip_address:
             ip_address = self.config.get("switch_ip")
 
-        self.sphaira = SphairaDownloader(ip_address=ip_address, debug=True)
+        # Disable debug mode to prevent tqdm output that interferes with TUI
+        self.sphaira = SphairaDownloader(ip_address=ip_address, debug=False)
         logger.info(f"Sphaira downloader initialized with IP: {ip_address or 'auto-discover'}")
 
     async def discover_switch(self) -> bool:
@@ -225,6 +227,9 @@ class SendToSwitchClient:
                 else:
                     progress_percent = 0
 
+                # Update local progress for TUI
+                self.current_progress_percent = min(progress_percent, 100)
+
                 # Report progress every N seconds
                 if current_time - last_progress_update >= progress_update_interval:
                     try:
@@ -296,6 +301,7 @@ class SendToSwitchClient:
                 logger.error(f"Failed to send {entry_name}: {e}", exc_info=True)
 
             self.current_task = None
+            self.current_progress_percent = 0
 
         except Exception as e:
             error_str = str(e)
@@ -315,8 +321,6 @@ class SendToSwitchClient:
 
     async def stream_with_progress(self, url: str, filename: str, progress_callback):
         """Stream HTTP game with progress reporting"""
-        # Note: Progress callback integration with sphaira.py is not yet implemented
-        # The sphaira library would need to be modified to accept and call the callback
         # Pass API key in Authorization header for authenticated downloads
         headers = {}
         if self.config.get("api_key"):
@@ -325,16 +329,17 @@ class SendToSwitchClient:
         result = await self.sphaira.streamHttpGame(
             url=url,
             filename=filename,
-            headers=headers if headers else None
+            headers=headers if headers else None,
+            progress_callback=progress_callback
         )
         return result
 
     async def upload_with_progress(self, filename: str, progress_callback):
         """Upload local game with progress reporting"""
-        # Note: Progress callback integration with sphaira.py is not yet implemented
-        # The sphaira library would need to be modified to accept and call the callback
-        # For now, just call the existing method
-        result = await self.sphaira.uploadLocalGame(fileName=filename)
+        result = await self.sphaira.uploadLocalGame(
+            fileName=filename, 
+            progress_callback=progress_callback
+        )
         return result
 
     def generate_tui(self) -> Layout:
@@ -366,6 +371,7 @@ class SendToSwitchClient:
 
         if self.current_task:
             stats_table.add_row("Current Task:", self.current_task)
+            stats_table.add_row("Progress:", f"{self.current_progress_percent}%")
 
         if self.sphaira and self.sphaira.ip_address:
             stats_table.add_row("Switch IP:", self.sphaira.ip_address)
