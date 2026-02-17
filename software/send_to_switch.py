@@ -5,6 +5,7 @@ Send to Switch Client
 A client application that polls ModdingCartel for games to send to Nintendo Switch
 via Sphaira FTP server. Features a TUI (Text User Interface) for monitoring.
 """
+
 import asyncio
 import logging
 import sys
@@ -67,7 +68,7 @@ class SendToSwitchClient:
         try:
             if self.config_path.exists():
                 with open(self.config_path, "r") as f:
-                        self.config = yaml.safe_load(f) or {}
+                    self.config = yaml.safe_load(f) or {}
                 logger.info(f"Configuration loaded from {self.config_path}")
                 return True
             else:
@@ -93,7 +94,7 @@ class SendToSwitchClient:
         if "api_key" in self.config:
             logger.info("Using existing API key")
             self.api_client = ModdingCartel(
-                    base_url=self.config.get("base_url", "https://moddingcartel.com"),
+                base_url=self.config.get("base_url", "https://moddingcartel.com"),
                 api_key=self.config["api_key"],
             )
             return True
@@ -103,16 +104,21 @@ class SendToSwitchClient:
         self.console.print("No API key found. Please login to create one.\n")
 
         username = self.console.input("[yellow]Username:[/yellow] ").strip()
-        password = self.console.input("[yellow]Password:[/yellow] ", password=True).strip()
+        password = self.console.input(
+            "[yellow]Password:[/yellow] ", password=True
+        ).strip()
 
         if not username or not password:
             self.console.print("[red]Username and password are required[/red]")
             return False
 
         # Get base URL
-        base_url = self.console.input(
-            "[yellow]Server URL:[/yellow] [dim](default: https://moddingcartel.com)[/dim] "
-        ).strip() or "https://moddingcartel.com"
+        base_url = (
+            self.console.input(
+                "[yellow]Server URL:[/yellow] [dim](default: https://moddingcartel.com)[/dim] "
+            ).strip()
+            or "https://moddingcartel.com"
+        )
 
         try:
             self.api_client = ModdingCartel(base_url=base_url)
@@ -142,7 +148,9 @@ class SendToSwitchClient:
 
         # Disable debug mode to prevent tqdm output that interferes with TUI
         self.sphaira = SphairaDownloader(ip_address=ip_address, debug=False)
-        logger.info(f"Sphaira downloader initialized with IP: {ip_address or 'auto-discover'}")
+        logger.info(
+            f"Sphaira downloader initialized with IP: {ip_address or 'auto-discover'}"
+        )
 
     async def discover_switch(self) -> bool:
         """Discover Switch on the network"""
@@ -155,7 +163,9 @@ class SendToSwitchClient:
             if found:
                 self.config["switch_ip"] = self.sphaira.ip_address
                 self.save_config()
-                self.stats["status"] = f"Connected to Switch at {self.sphaira.ip_address}"
+                self.stats["status"] = (
+                    f"Connected to Switch at {self.sphaira.ip_address}"
+                )
                 logger.info(f"Switch found at {self.sphaira.ip_address}")
                 return True
             else:
@@ -186,7 +196,6 @@ class SendToSwitchClient:
                 self.stats["last_poll_time"] = time.time()
 
             logger.debug(f"Processing queue: {len(queue)} items")
-
 
             if not queue:
                 self.stats["status"] = "Ready! Start adding games to the queue..."
@@ -262,7 +271,9 @@ class SendToSwitchClient:
                     except Exception as e:
                         error_str = str(e)
                         if "Invalid API Key" in error_str:
-                            logger.error("API key is invalid or revoked. Please re-authenticate.")
+                            logger.error(
+                                "API key is invalid or revoked. Please re-authenticate."
+                            )
                             raise
                         logger.warning(f"Failed to update progress: {e}")
                         raise
@@ -275,7 +286,9 @@ class SendToSwitchClient:
 
             # Check if file is local or HTTP
             try:
-                if entry_source.startswith("http://") or entry_source.startswith("https://"):
+                if entry_source.startswith("http://") or entry_source.startswith(
+                    "https://"
+                ):
                     # Stream from HTTP with progress reporting
                     result = await self.stream_with_progress(
                         entry_source, entry_name, report_progress
@@ -312,7 +325,9 @@ class SendToSwitchClient:
                 error_msg = str(e)
                 # Check if it's an invalid API key error
                 if "Invalid API Key" in error_msg:
-                    logger.error("API key is invalid or revoked. Please re-authenticate.")
+                    logger.error(
+                        "API key is invalid or revoked. Please re-authenticate."
+                    )
                     raise
                 self.api_client.update_queue_progress(
                     queue_item_id=queue_item_id,
@@ -334,7 +349,9 @@ class SendToSwitchClient:
             # Check if it's an invalid API key error
             if "Invalid API Key" in error_str:
                 self.stats["status"] = "Invalid API Key - Exiting..."
-                logger.error("API key is invalid or revoked. Clearing config and exiting.")
+                logger.error(
+                    "API key is invalid or revoked. Clearing config and exiting."
+                )
                 # Clear the API key from config
                 if "api_key" in self.config:
                     del self.config["api_key"]
@@ -363,7 +380,7 @@ class SendToSwitchClient:
             filename=filename,
             headers=headers if headers else None,
             progress_callback=progress_callback,
-            method="auto"  # Auto-detect USB or FTP
+            method="auto",  # Auto-detect USB or FTP
         )
         return result
 
@@ -372,7 +389,7 @@ class SendToSwitchClient:
         result = await self.sphaira.uploadLocalGame(
             fileName=filename,
             progress_callback=progress_callback,
-            method="auto"  # Auto-detect USB or FTP
+            method="auto",  # Auto-detect USB or FTP
         )
         return result
 
@@ -410,7 +427,9 @@ class SendToSwitchClient:
         if self.sphaira and self.sphaira.ip_address:
             stats_table.add_row("Switch IP:", self.sphaira.ip_address)
 
-        layout["body"].update(Panel(stats_table, title="Statistics", border_style="green"))
+        layout["body"].update(
+            Panel(stats_table, title="Statistics", border_style="green")
+        )
 
         # Footer - Controls
         footer_text = Text.from_markup(
@@ -481,20 +500,28 @@ class SendToSwitchClient:
             # Try USB detection first
             self.console.print("\n[cyan]Checking for USB connection...[/cyan]")
             if await self.sphaira.detect_usb_switch():
-                self.console.print("[green]✓ Switch detected via USB! USB transfers will be prioritized.[/green]")
+                self.console.print(
+                    "[green]✓ Switch detected via USB! USB transfers will be prioritized.[/green]"
+                )
             else:
-                self.console.print("[yellow]No USB connection detected. Will use network (FTP).[/yellow]")
+                self.console.print(
+                    "[yellow]No USB connection detected. Will use network (FTP).[/yellow]"
+                )
 
                 # Discover Switch if no IP configured
                 if not self.sphaira.ip_address:
-                    self.console.print("\n[yellow]Discovering Switch on network...[/yellow]")
+                    self.console.print(
+                        "\n[yellow]Discovering Switch on network...[/yellow]"
+                    )
                     if not await self.discover_switch():
                         self.console.print(
                             "[red]Failed to discover Switch. Please check your network connection or USB connection.[/red]"
                         )
                         return
 
-            self.console.print("\n[green]✓ Setup complete! Starting polling loop...[/green]")
+            self.console.print(
+                "\n[green]✓ Setup complete! Starting polling loop...[/green]"
+            )
             self.console.print(f"[dim]Polling every {POLL_INTERVAL} seconds...[/dim]\n")
 
             # Run main loop

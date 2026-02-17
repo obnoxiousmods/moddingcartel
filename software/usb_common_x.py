@@ -1,5 +1,4 @@
 import struct
-import time
 
 import crc32c
 import usb.core
