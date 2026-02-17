@@ -1,0 +1,65 @@
+name: Build Windows Release
+
+on:
+  push:
+    tags:
+      - 'v*'  # Trigger on version tags like v1.0.0
+  workflow_dispatch:  # Allow manual triggering
+
+jobs:
+  build-windows:
+    runs-on: windows-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.12'
+    
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install pyinstaller
+        pip install -r requirements.txt
+    
+    - name: Build executable with PyInstaller
+      run: |
+        pyinstaller moddingcartel.spec
+    
+    - name: List build output
+      run: |
+        dir dist
+    
+    - name: Upload executable as artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: moddingcartel-windows
+        path: dist/moddingcartel.exe
+        retention-days: 90
+    
+    - name: Create Release
+      if: startsWith(github.ref, 'refs/tags/')
+      uses: softprops/action-gh-release@v1
+      with:
+        files: dist/moddingcartel.exe
+        body: |
+          ## moddingcartel Windows Release
+          
+          Download `moddingcartel.exe` and double-click to run.
+          A terminal window will open with the application.
+          
+          ### Requirements
+          - Windows 10 or later
+          - Network connection to ModdingCartel server
+          - Nintendo Switch running Sphaira FTP server
+          
+          ### First Run
+          1. Double-click `moddingcartel.exe`
+          2. Enter your ModdingCartel credentials
+          3. The app will discover your Switch on the network
+          4. Start queuing games to send!
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
