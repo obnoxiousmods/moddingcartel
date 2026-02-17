@@ -236,7 +236,7 @@ class SphairaDownloader:
                         # Call async progress_callback from sync code
                         future = asyncio.run_coroutine_threadsafe(progress_callback(len(buf)), loop)
                         try:
-                            future.result(timeout=1.0)  # Wait up to 1 second for callback
+                            future.result(timeout=0.2)  # Wait up to 200ms for callback
                         except Exception as e:
                             self.logger.warning(f"Progress callback failed: {e}")
 
@@ -330,7 +330,7 @@ class SphairaDownloader:
                         # Call async progress_callback from sync code
                         future = asyncio.run_coroutine_threadsafe(progress_callback(len(buf)), loop)
                         try:
-                            future.result(timeout=1.0)  # Wait up to 1 second for callback
+                            future.result(timeout=0.2)  # Wait up to 200ms for callback
                         except Exception as e:
                             self.logger.warning(f"Progress callback failed: {e}")
 
