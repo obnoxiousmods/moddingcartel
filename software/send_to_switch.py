@@ -362,7 +362,8 @@ class SendToSwitchClient:
             url=url,
             filename=filename,
             headers=headers if headers else None,
-            progress_callback=progress_callback
+            progress_callback=progress_callback,
+            method="auto"  # Auto-detect USB or FTP
         )
         return result
 
@@ -370,7 +371,8 @@ class SendToSwitchClient:
         """Upload local game with progress reporting"""
         result = await self.sphaira.uploadLocalGame(
             fileName=filename,
-            progress_callback=progress_callback
+            progress_callback=progress_callback,
+            method="auto"  # Auto-detect USB or FTP
         )
         return result
 
@@ -476,14 +478,21 @@ class SendToSwitchClient:
             # Setup Sphaira
             self.setup_sphaira()
 
-            # Discover Switch if no IP configured
-            if not self.sphaira.ip_address:
-                self.console.print("\n[yellow]Discovering Switch on network...[/yellow]")
-                if not await self.discover_switch():
-                    self.console.print(
-                        "[red]Failed to discover Switch. Please check your network connection.[/red]"
-                    )
-                    return
+            # Try USB detection first
+            self.console.print("\n[cyan]Checking for USB connection...[/cyan]")
+            if await self.sphaira.detect_usb_switch():
+                self.console.print("[green]✓ Switch detected via USB! USB transfers will be prioritized.[/green]")
+            else:
+                self.console.print("[yellow]No USB connection detected. Will use network (FTP).[/yellow]")
+
+                # Discover Switch if no IP configured
+                if not self.sphaira.ip_address:
+                    self.console.print("\n[yellow]Discovering Switch on network...[/yellow]")
+                    if not await self.discover_switch():
+                        self.console.print(
+                            "[red]Failed to discover Switch. Please check your network connection or USB connection.[/red]"
+                        )
+                        return
 
             self.console.print("\n[green]✓ Setup complete! Starting polling loop...[/green]")
             self.console.print(f"[dim]Polling every {POLL_INTERVAL} seconds...[/dim]\n")
