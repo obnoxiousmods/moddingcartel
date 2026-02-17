@@ -1,18 +1,15 @@
 import asyncio
 import os
-import struct
 import time
-from typing import Optional, Tuple
+from typing import Optional
 
 import aiofiles
 import aioftp
 import crc32c
 import httpx
 from sphaira_logger import (
-    log_hex_dump,
     log_http_request,
     log_http_response,
-    log_usb_packet,
     setup_logger,
 )
 from tqdm import tqdm
@@ -67,15 +64,15 @@ class SphairaDownloader:
             try:
                 self.logger.debug("Creating Usb connection instance...")
                 usb_conn = Usb()
-                
+
                 self.logger.debug("Waiting for Switch to connect (VID:0x057E, PID:0x3000)...")
                 # This will wait for the Switch and configure endpoints
                 usb_conn.wait_for_connect()
-                
+
                 self.logger.info("✓ Switch detected and configured via USB (Sphaira protocol)")
                 if self.debug:
                     tqdm.write("✓ Switch detected via USB (Sphaira protocol)")
-                
+
                 # Store the USB connection instance
                 self.usb_conn = usb_conn
                 return True
@@ -189,71 +186,79 @@ class SphairaDownloader:
         size_msb = ((file_size >> 32) & 0xFFFF) | (flags << 16)
         self.usb_conn.send_result(RESULT_OK, size_msb, size_lsb)
 
-    def _file_transfer_loop_local(self, file_path: str, file_size: int, flags: int, progress_callback, pbar):
+    def _file_transfer_loop_local(self, file_path: str, file_size: int, flags: int, progress_callback, pbar, loop=None):
         """Transfer loop for local files using Sphaira protocol"""
         self.logger.info("Starting file transfer loop for local file...")
-        
+
         bytes_transferred = 0
         total_requests = 0
-        
+
         with open(file_path, 'rb') as f:
             while True:
                 # Get offset + size from Switch
                 [offset, size, _] = self.usb_conn.get_send_data_header()
-                
+
                 # Check if we should finish now
                 if offset == 0 and size == 0:
                     self.usb_conn.send_result(RESULT_OK)
                     self.logger.info("✓ Transfer complete!")
                     break
-                
+
                 total_requests += 1
-                
+
                 try:
                     # Seek to offset and read data
                     f.seek(offset)
                     buf = f.read(size)
-                    
+
                     if len(buf) == 0:
                         self.logger.error(f"Read 0 bytes at offset {offset}")
                         self.usb_conn.send_result(RESULT_ERROR)
                         continue
-                    
+
                     # Progress indicator
                     progress = (offset / file_size) * 100 if file_size > 0 else 0
                     if total_requests % 10 == 0:
                         self.logger.debug(f"[Transfer] offset={offset}, size={size} ({progress:.1f}% - request #{total_requests})")
-                    
+
                     # Respond with length and CRC32C
                     self.usb_conn.send_result(RESULT_OK, len(buf), crc32c.crc32c(buf))
-                    
+
                     # Send the data
                     self.usb_conn.write(buf)
-                    
+
                     bytes_transferred += len(buf)
-                    
+
                     # Update progress
                     if pbar:
                         pbar.update(len(buf))
-                    
+                    elif progress_callback and loop:
+                        # Call async progress_callback from sync code
+                        future = asyncio.run_coroutine_threadsafe(progress_callback(len(buf)), loop)
+                        try:
+                            future.result(timeout=1.0)  # Wait up to 1 second for callback
+                        except Exception as e:
+                            self.logger.warning(f"Progress callback failed: {e}")
+
                 except Exception as e:
                     self.logger.error(f"Error reading/sending chunk at offset {offset}: {e}")
                     self.usb_conn.send_result(RESULT_ERROR)
                     raise
 
-    async def _file_transfer_loop_http(self, client: httpx.AsyncClient, url: str, file_size: int, 
+    async def _file_transfer_loop_http(self, client: httpx.AsyncClient, url: str, file_size: int,
                                        flags: int, headers: dict, cookies: dict, progress_callback, pbar):
         """Transfer loop for HTTP streams using Sphaira protocol"""
         self.logger.info("Starting file transfer loop for HTTP stream...")
-        
+
         # Create a buffer to cache data
         buffer = {}
         bytes_transferred = 0
         total_requests = 0
-        
+        loop = asyncio.get_event_loop()
+
         def _transfer_loop():
             nonlocal bytes_transferred, total_requests
-            
+
             # Use sync httpx client in executor
             import httpx as sync_httpx
             with sync_httpx.Client(
@@ -264,15 +269,15 @@ class SphairaDownloader:
                 while True:
                     # Get offset + size from Switch
                     [offset, size, _] = self.usb_conn.get_send_data_header()
-                    
+
                     # Check if we should finish now
                     if offset == 0 and size == 0:
                         self.usb_conn.send_result(RESULT_OK)
                         self.logger.info("✓ Transfer complete!")
                         break
-                    
+
                     total_requests += 1
-                    
+
                     # Check if we have this data cached
                     cache_key = offset
                     if cache_key in buffer:
@@ -287,41 +292,48 @@ class SphairaDownloader:
                             range_headers = {"Range": f"bytes={offset}-{end_byte}"}
                             if headers:
                                 range_headers.update(headers)
-                            
+
                             # Progress indicator
                             progress = (offset / file_size) * 100 if file_size > 0 else 0
                             if total_requests % 10 == 0:
                                 self.logger.debug(f"[Download] offset={offset}, size={size} ({progress:.1f}% - request #{total_requests})")
-                            
+
                             response = sync_client.get(url, headers=range_headers, cookies=cookies)
                             response.raise_for_status()
-                            
+
                             buf = response.content
                             bytes_transferred += len(buf)
-                            
+
                             # Cache this chunk
                             buffer[cache_key] = buf
-                            
+
                             # Limit buffer size to prevent memory issues
                             if len(buffer) > 100:  # Keep max 100 chunks
                                 oldest_key = min(buffer.keys())
                                 del buffer[oldest_key]
-                        
+
                         except Exception as e:
                             self.logger.error(f"Error downloading chunk at offset {offset}: {e}")
                             self.usb_conn.send_result(RESULT_ERROR)
                             continue
-                    
+
                     # Respond with length and CRC32C
                     self.usb_conn.send_result(RESULT_OK, len(buf), crc32c.crc32c(buf))
-                    
+
                     # Send the data
                     self.usb_conn.write(buf)
-                    
+
                     # Update progress
                     if pbar:
                         pbar.update(len(buf))
-        
+                    elif progress_callback:
+                        # Call async progress_callback from sync code
+                        future = asyncio.run_coroutine_threadsafe(progress_callback(len(buf)), loop)
+                        try:
+                            future.result(timeout=1.0)  # Wait up to 1 second for callback
+                        except Exception as e:
+                            self.logger.warning(f"Progress callback failed: {e}")
+
         await asyncio.get_event_loop().run_in_executor(None, _transfer_loop)
 
     async def _usb_install_file(self, file_path: str, filename: str, file_size: int, progress_callback=None):
@@ -335,6 +347,7 @@ class SphairaDownloader:
 
         pbar = None
         start_time = time.time()
+        loop = asyncio.get_event_loop()
 
         if not progress_callback:
             pbar = tqdm(
@@ -351,50 +364,50 @@ class SphairaDownloader:
             try:
                 # Build string table with just one file
                 string_table = bytes(filename, "utf8") + b"\n"
-                
+
                 # Read the send header and check the magic (Sphaira handshake)
                 self.logger.info("⏳ Waiting for Sphaira handshake...")
                 self.usb_conn.get_send_header()
                 self.logger.info("✓ Handshake received")
-                
+
                 # Send result and string table
                 self.usb_conn.send_result(RESULT_OK, len(string_table))
                 self.usb_conn.write(string_table)
                 self.logger.info("✓ File list sent to Switch")
-                
+
                 # Wait for command
                 self.logger.info("⏳ Waiting for install command from Switch...")
                 [cmd, file_index, _] = self.usb_conn.get_send_header()
-                
+
                 if cmd == CMD_QUIT:
                     self.usb_conn.send_result(RESULT_OK)
                     self.logger.info("✓ Quit command received")
                     return {"error": "Transfer cancelled by Switch"}
                 elif cmd == CMD_OPEN:
                     self.logger.info(f"✓ Install command received for file index {file_index}")
-                    
+
                     # Set FLAG_NONE since we can seek
                     flags = FLAG_NONE
-                    
+
                     # Send file info result
                     self._send_file_info_result(file_size, flags)
-                    
+
                     # Start file transfer loop
-                    self._file_transfer_loop_local(file_path, file_size, flags, progress_callback, pbar)
+                    self._file_transfer_loop_local(file_path, file_size, flags, progress_callback, pbar, loop)
                 else:
                     self.logger.error(f"✗ Unknown command received: {cmd}")
                     self.usb_conn.send_result(RESULT_ERROR)
                     return {"error": f"Unknown command: {cmd}"}
-                
+
                 return {"success": True}
-                
+
             except Exception as e:
                 self.logger.error(f"USB transfer error: {type(e).__name__} - {e}", exc_info=True)
                 raise
 
         try:
             result = await asyncio.get_event_loop().run_in_executor(None, _usb_handshake_and_transfer)
-            
+
             elapsed_time = time.time() - start_time
             avg_speed = file_size / elapsed_time if elapsed_time > 0 else 0
 
@@ -482,40 +495,40 @@ class SphairaDownloader:
             try:
                 # Build string table with just one file
                 string_table = bytes(filename, "utf8") + b"\n"
-                
+
                 # Read the send header and check the magic (Sphaira handshake)
                 self.logger.info("⏳ Waiting for Sphaira handshake...")
                 self.usb_conn.get_send_header()
                 self.logger.info("✓ Handshake received")
-                
+
                 # Send result and string table
                 self.usb_conn.send_result(RESULT_OK, len(string_table))
                 self.usb_conn.write(string_table)
                 self.logger.info("✓ File list sent to Switch")
-                
+
                 # Wait for command
                 self.logger.info("⏳ Waiting for install command from Switch...")
                 [cmd, file_index, _] = self.usb_conn.get_send_header()
-                
+
                 if cmd == CMD_QUIT:
                     self.usb_conn.send_result(RESULT_OK)
                     self.logger.info("✓ Quit command received")
                     return {"error": "Transfer cancelled by Switch"}
                 elif cmd == CMD_OPEN:
                     self.logger.info(f"✓ Install command received for file index {file_index}")
-                    
+
                     # Set FLAG_NONE since we can seek with HTTP range requests
                     flags = FLAG_NONE
-                    
+
                     # Send file info result
                     self._send_file_info_result(total_size, flags)
-                    
+
                     return {"success": True}
                 else:
                     self.logger.error(f"✗ Unknown command received: {cmd}")
                     self.usb_conn.send_result(RESULT_ERROR)
                     return {"error": f"Unknown command: {cmd}"}
-                
+
             except Exception as e:
                 self.logger.error(f"USB handshake error: {type(e).__name__} - {e}", exc_info=True)
                 raise
@@ -523,25 +536,25 @@ class SphairaDownloader:
         try:
             # Perform handshake
             result = await asyncio.get_event_loop().run_in_executor(None, _usb_handshake)
-            
+
             if not result.get("success"):
                 if pbar:
                     pbar.close()
                 return result
-            
+
             # Now start the file transfer loop
             async with httpx.AsyncClient(
                 timeout=httpx.Timeout(connect_timeout, read=read_timeout),
                 proxy=proxy,
                 follow_redirects=True,
             ) as http_client:
-                
+
                 self.logger.info("Starting HTTP stream transfer loop...")
                 await self._file_transfer_loop_http(
-                    http_client, url, total_size, FLAG_NONE, 
+                    http_client, url, total_size, FLAG_NONE,
                     headers, cookies, progress_callback, pbar
                 )
-            
+
             elapsed_time = time.time() - start_time
             avg_speed = total_size / elapsed_time if elapsed_time > 0 else 0
 
