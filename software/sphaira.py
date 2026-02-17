@@ -31,7 +31,7 @@ class SphairaDownloader:
         self.usb_in_ep = None
         self.usb_out_ep = None
 
-    def detect_usb_switch(self) -> bool:
+    async def detect_usb_switch(self) -> bool:
         """
         Detect Nintendo Switch connected via USB using Tinfoil/Awoo protocol.
         Returns True if Switch is detected and USB endpoints are configured.
@@ -41,55 +41,58 @@ class SphairaDownloader:
                 tqdm.write("pyusb not available - USB support disabled")
             return False
 
-        try:
-            # Try to find Switch in USB mode
-            # VID: 0x057E (Nintendo), PID: 0x3000 (Switch in Tinfoil/Awoo mode)
-            dev = usb.core.find(idVendor=0x057E, idProduct=0x3000)
-
-            if dev is None:
-                if self.debug:
-                    tqdm.write("No Switch detected in USB mode (VID:0x057E, PID:0x3000)")
-                return False
-
-            # Reset and configure the device
+        def _detect():
             try:
-                dev.reset()
+                # Try to find Switch in USB mode
+                # VID: 0x057E (Nintendo), PID: 0x3000 (Switch in Tinfoil/Awoo mode)
+                dev = usb.core.find(idVendor=0x057E, idProduct=0x3000)
+
+                if dev is None:
+                    if self.debug:
+                        tqdm.write("No Switch detected in USB mode (VID:0x057E, PID:0x3000)")
+                    return False
+
+                # Reset and configure the device
+                try:
+                    dev.reset()
+                except Exception as e:
+                    if self.debug:
+                        tqdm.write(f"Device reset failed (may be normal): {e}")
+
+                dev.set_configuration()
+                cfg = dev.get_active_configuration()
+
+                # Find IN and OUT endpoints
+                def is_out_ep(ep):
+                    return usb.util.endpoint_direction(ep.bEndpointAddress) == usb.util.ENDPOINT_OUT
+
+                def is_in_ep(ep):
+                    return usb.util.endpoint_direction(ep.bEndpointAddress) == usb.util.ENDPOINT_IN
+
+                out_ep = usb.util.find_descriptor(cfg[(0, 0)], custom_match=is_out_ep)
+                in_ep = usb.util.find_descriptor(cfg[(0, 0)], custom_match=is_in_ep)
+
+                if out_ep is None or in_ep is None:
+                    if self.debug:
+                        tqdm.write("Failed to find USB endpoints")
+                    return False
+
+                # Store device and endpoints
+                self.usb_device = dev
+                self.usb_out_ep = out_ep
+                self.usb_in_ep = in_ep
+
+                if self.debug:
+                    tqdm.write(f"✓ Switch detected via USB (VID:0x{dev.idVendor:04X}, PID:0x{dev.idProduct:04X})")
+
+                return True
+
             except Exception as e:
                 if self.debug:
-                    tqdm.write(f"Device reset failed (may be normal): {e}")
-
-            dev.set_configuration()
-            cfg = dev.get_active_configuration()
-
-            # Find IN and OUT endpoints
-            def is_out_ep(ep):
-                return usb.util.endpoint_direction(ep.bEndpointAddress) == usb.util.ENDPOINT_OUT
-
-            def is_in_ep(ep):
-                return usb.util.endpoint_direction(ep.bEndpointAddress) == usb.util.ENDPOINT_IN
-
-            out_ep = usb.util.find_descriptor(cfg[(0, 0)], custom_match=is_out_ep)
-            in_ep = usb.util.find_descriptor(cfg[(0, 0)], custom_match=is_in_ep)
-
-            if out_ep is None or in_ep is None:
-                if self.debug:
-                    tqdm.write("Failed to find USB endpoints")
+                    tqdm.write(f"USB detection error: {e}")
                 return False
 
-            # Store device and endpoints
-            self.usb_device = dev
-            self.usb_out_ep = out_ep
-            self.usb_in_ep = in_ep
-
-            if self.debug:
-                tqdm.write(f"✓ Switch detected via USB (VID:0x{dev.idVendor:04X}, PID:0x{dev.idProduct:04X})")
-
-            return True
-
-        except Exception as e:
-            if self.debug:
-                tqdm.write(f"USB detection error: {e}")
-            return False
+        return await asyncio.get_event_loop().run_in_executor(None, _detect)
 
     def _usb_send_packet(self, command: int, payload: bytes, timeout: int = 60000):
         """Send a packet over USB using Tinfoil/Awoo protocol"""
@@ -228,10 +231,14 @@ class SphairaDownloader:
         """Install a file via USB using Tinfoil/Awoo protocol"""
         # Send initial handshake - request to install
         install_request = f"install:/{filename}".encode('utf-8')
-        self._usb_send_packet(command=1, payload=install_request)
+        await asyncio.get_event_loop().run_in_executor(
+            None, self._usb_send_packet, 1, install_request
+        )
 
         # Wait for acknowledgment
-        cmd, response = self._usb_recv_packet()
+        cmd, response = await asyncio.get_event_loop().run_in_executor(
+            None, self._usb_recv_packet
+        )
         if cmd != 1 or response != b'OK':
             return {"error": f"USB handshake failed: cmd={cmd}, response={response}"}
 
@@ -266,7 +273,9 @@ class SphairaDownloader:
                         await progress_callback(chunk_size)
 
             # Send completion signal
-            self._usb_send_packet(command=3, payload=b'')
+            await asyncio.get_event_loop().run_in_executor(
+                None, self._usb_send_packet, 3, b''
+            )
 
             if pbar:
                 pbar.close()
@@ -299,10 +308,14 @@ class SphairaDownloader:
 
         # Send initial handshake
         install_request = f"install:/{filename}".encode('utf-8')
-        self._usb_send_packet(command=1, payload=install_request)
+        await asyncio.get_event_loop().run_in_executor(
+            None, self._usb_send_packet, 1, install_request
+        )
 
         # Wait for acknowledgment
-        cmd, response = self._usb_recv_packet()
+        cmd, response = await asyncio.get_event_loop().run_in_executor(
+            None, self._usb_recv_packet
+        )
         if cmd != 1 or response != b'OK':
             return {"error": f"USB handshake failed: cmd={cmd}, response={response}"}
 
@@ -349,7 +362,9 @@ class SphairaDownloader:
                             await progress_callback(chunk_size)
 
             # Send completion signal
-            self._usb_send_packet(command=3, payload=b'')
+            await asyncio.get_event_loop().run_in_executor(
+                None, self._usb_send_packet, 3, b''
+            )
 
             if pbar:
                 pbar.close()
@@ -380,7 +395,7 @@ class SphairaDownloader:
         # Auto-detect method if set to "auto"
         if method == "auto":
             # Try USB first
-            if self.detect_usb_switch():
+            if await self.detect_usb_switch():
                 method = "usb"
                 if not progress_callback and self.debug:
                     tqdm.write("Using USB mode for transfer")
@@ -393,7 +408,7 @@ class SphairaDownloader:
         # Use USB if requested
         if method == "usb":
             if not self.usb_device:
-                if not self.detect_usb_switch():
+                if not await self.detect_usb_switch():
                     return {"error": "Switch not found via USB. Please ensure it's connected and in Sphaira/Awoo mode."}
 
             return await self._usb_install_file(file_path, fileName, file_size, progress_callback)
@@ -486,7 +501,7 @@ class SphairaDownloader:
         # Auto-detect method if set to "auto"
         if method == "auto":
             # Try USB first
-            if self.detect_usb_switch():
+            if await self.detect_usb_switch():
                 method = "usb"
                 if not progress_callback and self.debug:
                     tqdm.write("Using USB mode for streaming")
@@ -499,7 +514,7 @@ class SphairaDownloader:
         # Use USB if requested
         if method == "usb":
             if not self.usb_device:
-                if not self.detect_usb_switch():
+                if not await self.detect_usb_switch():
                     return {"error": "Switch not found via USB. Please ensure it's connected and in Sphaira/Awoo mode."}
 
             return await self._usb_stream_http(

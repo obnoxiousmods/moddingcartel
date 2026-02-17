@@ -480,7 +480,7 @@ class SendToSwitchClient:
 
             # Try USB detection first
             self.console.print("\n[cyan]Checking for USB connection...[/cyan]")
-            if self.sphaira.detect_usb_switch():
+            if await self.sphaira.detect_usb_switch():
                 self.console.print("[green]✓ Switch detected via USB! USB transfers will be prioritized.[/green]")
             else:
                 self.console.print("[yellow]No USB connection detected. Will use network (FTP).[/yellow]")
