@@ -92,7 +92,7 @@ class SendToSwitchClient:
         if "api_key" in self.config:
             logger.info("Using existing API key")
             self.api_client = ModdingCartel(
-                base_url=self.config.get("base_url", "http://localhost:8000"),
+                    base_url=self.config.get("base_url", "http://localhost:6069"),
                 api_key=self.config["api_key"],
             )
             return True
@@ -110,8 +110,8 @@ class SendToSwitchClient:
 
         # Get base URL
         base_url = self.console.input(
-            "[yellow]Server URL:[/yellow] [dim](default: http://localhost:8000)[/dim] "
-        ).strip() or "http://localhost:8000"
+            "[yellow]Server URL:[/yellow] [dim](default: http://localhost:6069)[/dim] "
+        ).strip() or "http://localhost:6069"
 
         try:
             self.api_client = ModdingCartel(base_url=base_url)
