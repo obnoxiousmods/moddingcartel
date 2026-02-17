@@ -286,14 +286,14 @@ class SphairaDownloader:
         bytes_transferred = 0
         total_requests = 0
 
+        # Get the event loop before entering executor
+        loop = asyncio.get_running_loop()
+
         def _transfer_loop():
             nonlocal bytes_transferred, total_requests
 
             # Use sync httpx client in executor
             import httpx as sync_httpx
-
-            # Get the event loop to schedule async callbacks
-            loop = asyncio.get_event_loop()
 
             with sync_httpx.Client(
                 timeout=sync_httpx.Timeout(30.0, connect=10.0),
@@ -372,14 +372,13 @@ class SphairaDownloader:
                         pbar.update(len(buf))
                     elif progress_callback:
                         # Call async progress callback from sync context
-                        future = asyncio.run_coroutine_threadsafe(
-                            progress_callback(len(buf)), loop
-                        )
-                        # Wait for completion to ensure TUI updates happen
+                        # Don't wait for result to avoid blocking the transfer
                         try:
-                            future.result(timeout=1.0)
+                            asyncio.run_coroutine_threadsafe(
+                                progress_callback(len(buf)), loop
+                            )
                         except Exception as e:
-                            self.logger.warning(f"Progress callback error: {e}")
+                            self.logger.warning(f"Failed to schedule progress callback: {e}")
 
         await asyncio.get_event_loop().run_in_executor(None, _transfer_loop)
 
