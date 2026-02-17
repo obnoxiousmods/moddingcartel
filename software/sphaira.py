@@ -69,10 +69,10 @@ class SphairaDownloader:
 
         def _detect():
             try:
-                self.logger.debug("Creating Usb connection instance...")
+                self.logger.info("Creating Usb connection instance...")
                 usb_conn = Usb()
 
-                self.logger.debug(
+                self.logger.info(
                     "Waiting for Switch to connect (VID:0x057E, PID:0x3000)..."
                 )
                 # This will wait for the Switch and configure endpoints
@@ -116,7 +116,7 @@ class SphairaDownloader:
         self.logger.info(
             f"Starting network discovery - Port: {port}, Max concurrent: {max_concurrent}"
         )
-        self.logger.debug(
+        self.logger.info(
             f"Scan range: 192.168.{min(third_octets)}-{max(third_octets)}.{min(fourth_octets)}-{max(fourth_octets)}"
         )
 
@@ -244,7 +244,7 @@ class SphairaDownloader:
                     # Progress indicator
                     progress = (offset / file_size) * 100 if file_size > 0 else 0
                     if total_requests % 10 == 0:
-                        self.logger.debug(
+                        self.logger.info(
                             f"[Transfer] offset={offset}, size={size} ({progress:.1f}% - request #{total_requests})"
                         )
 
@@ -315,7 +315,7 @@ class SphairaDownloader:
                         # Use cached data
                         buf = buffer[cache_key][:size]
                         if total_requests % 50 == 0:
-                            self.logger.debug(
+                            self.logger.info(
                                 f"[Cache hit] offset={offset}, size={size}"
                             )
                     else:
@@ -331,7 +331,7 @@ class SphairaDownloader:
                                 (offset / file_size) * 100 if file_size > 0 else 0
                             )
                             if total_requests % 10 == 0:
-                                self.logger.debug(
+                                self.logger.info(
                                     f"[Download] offset={offset}, size={size} ({progress:.1f}% - request #{total_requests})"
                                 )
 
@@ -501,10 +501,10 @@ class SphairaDownloader:
     ):
         """Stream HTTP content directly to Switch via USB using Sphaira protocol"""
         self.logger.info(f"Starting USB HTTP stream - URL: {url}, Filename: {filename}")
-        self.logger.debug(
+        self.logger.info(
             f"Parameters - Headers: {headers}, Cookies: {cookies}, Proxy: {proxy}"
         )
-        self.logger.debug(
+        self.logger.info(
             f"Timeouts - Connect: {connect_timeout}s, Read: {read_timeout}s"
         )
 
@@ -750,7 +750,7 @@ class SphairaDownloader:
                 )
 
             try:
-                self.logger.debug(
+                self.logger.info(
                     f"Connecting to FTP - Host: {self.ip_address}, Port: 5000"
                 )
                 async with aioftp.Client.context(
@@ -851,16 +851,16 @@ class SphairaDownloader:
         Supports both USB (faster) and FTP (network) methods.
         """
         self.logger.info(f"streamHttpGame called - URL: {url}, Method: {method}")
-        self.logger.debug(
+        self.logger.info(
             f"Parameters - Headers: {headers}, Cookies: {cookies}, Proxy: {proxy}"
         )
-        self.logger.debug(
+        self.logger.info(
             f"Timeouts - Connect: {connect_timeout}s, Read: {read_timeout}s, Chunk size: {chunk_size}"
         )
 
         if not filename:
             filename = url.split("/")[-1] or "downloaded_game.nsp"
-            self.logger.debug(f"Filename extracted from URL: {filename}")
+            self.logger.info(f"Filename extracted from URL: {filename}")
 
         # Auto-detect method if set to "auto"
         if method == "auto":
