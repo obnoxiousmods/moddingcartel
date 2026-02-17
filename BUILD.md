@@ -148,7 +148,7 @@ Simply distribute the single `.exe` file to users. No installation required!
 
 ## File Size
 
-The executable is typically 30-50 MB due to bundled Python runtime and dependencies. To reduce size:
+The executable is typically 15-25 MB due to bundled Python runtime and dependencies. To reduce size:
 
 1. Use UPX compression (enabled by default in the spec file)
 2. Exclude unnecessary packages in the `excludes` list
