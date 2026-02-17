@@ -1079,6 +1079,8 @@ async def get_send_queue(request: Request):
 
         # Get user's send queue
         queue_items = await db.get_send_queue(user_id)
+        
+        logger.debug(f"Get send queue for user {user_id}: {len(queue_items)} items")
 
         # Construct full download URLs for each item
         base_url = str(request.base_url).rstrip("/")

@@ -176,6 +176,8 @@ class SendToSwitchClient:
             queue = self.api_client.get_send_queue()
             self.stats["current_queue_size"] = len(queue)
             self.stats["last_poll_time"] = time.time()
+            
+            logger.debug(f"Fetched queue: {len(queue)} items")
 
             if not queue:
                 self.stats["status"] = "Queue is empty, waiting..."

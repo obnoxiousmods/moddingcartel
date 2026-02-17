@@ -2047,6 +2047,7 @@ class Database:
                 FILTER item.user_id == @user_id AND item.status IN ['pending', 'processing']
                 SORT item.created_at ASC
                 LET entry = DOCUMENT('entries', item.entry_id)
+                FILTER entry != null
                 RETURN {
                     queue_item_id: item._key,
                     entry_id: item.entry_id,
