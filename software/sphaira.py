@@ -133,8 +133,8 @@ class SphairaDownloader:
         if magic != b'\x12\x12\x12\x12':
             raise RuntimeError(f"Invalid magic in USB packet: {magic.hex()}")
 
-        command = int.from_bytes(header[4:8], byteorder='little')
-        size = int.from_bytes(header[8:16], byteorder='little')
+        command = struct.unpack('<I', header[4:8])[0]
+        size = struct.unpack('<Q', header[8:16])[0]
 
         # Read payload
         payload = b''
@@ -537,7 +537,7 @@ class SphairaDownloader:
             try:
                 async with httpx.AsyncClient(
                     timeout=httpx.Timeout(connect_timeout, read=read_timeout),
-                        proxy=proxy,
+                    proxy=proxy,
                     follow_redirects=True,
                 ) as client:
                     resp = await client.head(url, headers=headers, cookies=cookies)
