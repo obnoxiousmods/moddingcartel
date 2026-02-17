@@ -2050,7 +2050,7 @@ class Database:
                 RETURN {
                     queue_item_id: item._key,
                     entry_id: item.entry_id,
-                    entry_name: entry.name,
+                    entry_name: CONCAT(entry.name, '.', entry.file_type),
                     entry_source: entry.source,
                     entry_size: entry.size,
                     status: item.status,
@@ -2088,7 +2088,7 @@ class Database:
                 RETURN {
                     queue_item_id: item._key,
                     entry_id: item.entry_id,
-                    entry_name: entry.name,
+                    entry_name: CONCAT(entry.name, '.', entry.file_type),
                     entry_source: entry.source,
                     entry_size: entry.size,
                     status: item.status,
