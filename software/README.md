@@ -39,7 +39,7 @@ When you run the client for the first time, you'll be prompted to:
    - This key is saved securely in `~/.config/send_to_switch/config.yaml`
 
 2. **Server URL**: Enter the ModdingCartel server URL
-   - Default: `http://localhost:8000`
+   - Default: `http://localhost:6069`
    - Or use a public URL like `https://moddingcartel.com`
 
 3. **Switch Discovery**: The client will scan your local network for your Switch
@@ -80,7 +80,7 @@ Configuration is stored in `~/.config/send_to_switch/config.yaml`:
 
 ```yaml
 api_key: your_api_key_here
-base_url: http://localhost:8000
+base_url: http://localhost:6069
 switch_ip: 192.168.1.100  # Auto-discovered on first run
 ```
 

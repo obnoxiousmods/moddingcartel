@@ -66,7 +66,7 @@ class SendToSwitchClient:
         try:
             if self.config_path.exists():
                 with open(self.config_path, "r") as f:
-                    self.config = yaml.safe_load(f) or {}
+                        self.config = yaml.safe_load(f) or {}
                 logger.info(f"Configuration loaded from {self.config_path}")
                 return True
             else:
