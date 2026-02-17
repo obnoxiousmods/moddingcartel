@@ -31,4 +31,21 @@ asyncio.run(main())
 
 """
 
-async def upload_game
+class SphairaDownloader:
+    def __init__(self, ip_address=None):
+        self.ip_address = ip_address
+
+    async def testGameUpload(self, fileName="bastion.nsp"):
+        if self.ip_address is None:
+            print("No IP address provided. Please set the IP address of the Sphaira device.")
+            return
+
+        try:
+            async with aioftp.Client.context(self.ip_address, 5000) as client:
+                await client.upload(fileName, fileName)
+                print(f"Successfully uploaded {fileName} to Sphaira at {self.ip_address}")
+        except Exception as e:
+            print(f"Failed to upload {fileName} to Sphaira at {self.ip_address}: {e}")
+if __name__ == "__main__":
+    downloader = SphairaDownloader()
+    asyncio.run(downloader.download_game("game_id"))
