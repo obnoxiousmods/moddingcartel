@@ -12,6 +12,7 @@ A modern community platform for managing and distributing Nintendo Switch game f
 - 📁 **Multi-format Support** - NSP, NSZ, and XCI file types
 - 🌐 **Flexible Sources** - Local filepaths or external URLs
 - 🎨 **Modern UI** - Dark theme with smooth transitions
+- 📦 **Windows Client** - Standalone `moddingcartel.exe` for sending games to Switch
 
 ## 🛠️ Tech Stack
 
@@ -220,6 +221,37 @@ The application uses Python's logging module. Logs are output to stdout.
 2. **Browse games** - Search and filter on homepage
 3. **Request games** - Submit requests for missing titles
 4. **Generate API key** - For programmatic access
+
+## 📦 Windows Client (moddingcartel.exe)
+
+The **Send to Switch** client is available as a standalone Windows executable that doesn't require Python installation.
+
+### Download
+
+Download `moddingcartel.exe` from the [latest release](https://github.com/obnoxiousmods/moddingcartel/releases/latest).
+
+### Usage
+
+1. **Double-click** `moddingcartel.exe` to launch
+2. **Enter credentials** when prompted (first run)
+3. **Automatic Switch discovery** - The client finds your Switch on the network
+4. **Queue games** via the web interface - The client automatically sends them to your Switch
+
+The client runs in a terminal window and displays:
+- Current status and progress
+- Queue size
+- Transfer statistics
+- Switch IP address
+
+### Requirements
+
+- Windows 10 or later
+- Network connection to your ModdingCartel server
+- Nintendo Switch running Sphaira FTP server
+
+### Building from Source
+
+To build the executable yourself, see [BUILD.md](BUILD.md) for detailed instructions.
 
 ## 🚨 Troubleshooting
 

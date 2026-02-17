@@ -31,6 +31,8 @@ MANIFEST
 #   before PyInstaller builds the exe, so as to inject date/other infos into it.
 *.manifest
 *.spec
+# Keep our build spec file
+!moddingcartel.spec
 
 # Installer logs
 pip-log.txt
