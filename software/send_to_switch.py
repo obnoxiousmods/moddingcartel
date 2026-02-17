@@ -398,7 +398,12 @@ class SendToSwitchClient:
         return layout
 
     async def update_queue_stats(self):
-        """Update queue statistics without processing"""
+        """
+        Fetch queue from API and update statistics.
+
+        Returns:
+            List of queue items for subsequent processing, or empty list on error.
+        """
         try:
             # Get queue from server
             queue = self.api_client.get_send_queue()
@@ -408,6 +413,7 @@ class SendToSwitchClient:
             return queue
         except Exception as e:
             logger.error(f"Error updating queue stats: {e}")
+            self.stats["status"] = f"Error fetching queue: {e}"
             return []
 
     async def run_loop(self):
