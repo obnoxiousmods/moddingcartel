@@ -1190,10 +1190,18 @@
                 headers: {
                     'Content-Type': 'application/json',
                 },
+                credentials: 'same-origin',
                 body: JSON.stringify({
                     entry_id: entry._key
                 })
             });
+            
+            const data = await response.json();
+            
+            if (response.status === 401) {
+                Toast.error('Authentication required. Please log in.');
+                return;
+            }
             
             const data = await response.json();
             

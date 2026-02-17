@@ -1008,15 +1008,19 @@ async def api_login(request: Request):
 
 async def send_to_switch(request: Request):
     """API endpoint to add a game to the user's send queue"""
-    # Require API authentication
-    if not getattr(request.state, "authenticated", False):
+    # Require authentication - either session or API key
+    has_session = request.session.get("user_id") is not None
+    has_api_auth = getattr(request.state, "authenticated", False)
+
+    if not has_session and not has_api_auth:
         return JSONResponse(
-            {"error": "API authentication required"},
+            {"error": "Authentication required. Please log in or use an API key."},
             status_code=401,
         )
 
     try:
-        user_id = request.state.user_id
+        # Get user_id from session or API auth
+        user_id = request.session.get("user_id") or request.state.user_id
         body = await request.json()
         entry_id = body.get("entry_id")
 
