@@ -16,3 +16,4 @@ httpx
 tqdm
 rich
 pyusb
+crc32c
