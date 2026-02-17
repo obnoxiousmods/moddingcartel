@@ -168,7 +168,7 @@ class SendToSwitchClient:
             logger.error(f"Discovery error: {e}")
             return False
 
-    async def process_queue(self, queue=None):
+    async def process_queue(self, queue=None, tui=None):
         """
         Process the send queue.
 
@@ -187,8 +187,11 @@ class SendToSwitchClient:
 
             logger.debug(f"Processing queue: {len(queue)} items")
 
+
             if not queue:
                 self.stats["status"] = "Ready! Start adding games to the queue..."
+                if tui:
+                    tui.update(self.generate_tui())
                 return
 
             # Process first item in queue
@@ -201,6 +204,9 @@ class SendToSwitchClient:
             logger.info(f"Processing queue item: {entry_name}")
             self.stats["status"] = f"Sending: {entry_name}"
             self.current_task = entry_name
+
+            if tui:
+                tui.update(self.generate_tui())
 
             # Mark as processing with initial progress
             self.api_client.update_queue_progress(
@@ -240,6 +246,9 @@ class SendToSwitchClient:
                 # Update local progress for TUI
                 self.current_progress_percent = min(progress_percent, 100)
 
+                if tui:
+                    tui.update(self.generate_tui())
+
                 # Report progress every N seconds
                 if current_time - last_progress_update >= progress_update_interval:
                     try:
@@ -256,9 +265,13 @@ class SendToSwitchClient:
                             logger.error("API key is invalid or revoked. Please re-authenticate.")
                             raise
                         logger.warning(f"Failed to update progress: {e}")
+                        raise
 
                 last_bytes = bytes_transferred
                 last_time = current_time
+
+            if tui:
+                tui.update(self.generate_tui())
 
             # Check if file is local or HTTP
             try:
@@ -313,6 +326,9 @@ class SendToSwitchClient:
             self.current_task = None
             self.current_progress_percent = 0
 
+            if tui:
+                tui.update(self.generate_tui())
+
         except Exception as e:
             error_str = str(e)
             # Check if it's an invalid API key error
@@ -328,6 +344,9 @@ class SendToSwitchClient:
                 raise
             self.stats["status"] = f"Error processing queue: {e}"
             logger.error(f"Queue processing error: {e}", exc_info=True)
+
+        if tui:
+            tui.update(self.generate_tui())
 
     async def stream_with_progress(self, url: str, filename: str, progress_callback):
         """Stream HTTP game with progress reporting"""
@@ -424,16 +443,16 @@ class SendToSwitchClient:
         self.running = True
 
         try:
-            with Live(self.generate_tui(), refresh_per_second=1, screen=True) as live:
+            with Live(self.generate_tui(), refresh_per_second=1, screen=True) as tuiVar:
                 while self.running:
                     # Update queue stats and get queue
                     queue = await self.update_queue_stats()
 
                     # Update display with fresh stats
-                    live.update(self.generate_tui())
+                    tuiVar.update(self.generate_tui())
 
                     # Process queue (pass queue to avoid duplicate fetch)
-                    await self.process_queue(queue)
+                    await self.process_queue(queue, tui=tuiVar)
 
                     # Wait for next poll
                     await asyncio.sleep(POLL_INTERVAL)
