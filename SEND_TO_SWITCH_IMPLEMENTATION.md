@@ -2,7 +2,17 @@
 
 ## Overview
 
-This implementation adds a comprehensive "Send to Switch" feature that allows users to send Nintendo Switch games directly to their console via Sphaira's FTP server, with real-time progress tracking and queue management.
+This implementation adds a comprehensive "Send to Switch" feature that allows users to send Nintendo Switch games directly to their console via Sphaira's USB connection (preferred) or FTP server (fallback), with real-time progress tracking and queue management.
+
+## Key Update: USB Support
+
+**USB transfer support has been added** with automatic detection and preference over FTP:
+
+- **Faster Transfers**: USB transfers are significantly faster than network FTP
+- **Auto-Detection**: Client automatically detects USB connection on startup
+- **Fallback to FTP**: If USB is not available, falls back to network FTP
+- **Tinfoil/Awoo Protocol**: Uses industry-standard protocol compatible with Sphaira, Awoo Installer, and Tinfoil
+- **Seamless Integration**: Same API and queue system, just faster transfers
 
 ## Components
 
@@ -63,17 +73,19 @@ A reusable HTTP client for the ModdingCartel API:
 A full-featured Python application with TUI interface:
 
 #### Features:
-- Automatic Switch discovery on local network
+- **USB Connection Detection**: Automatic detection of Switch via USB on startup (preferred)
+- **Network Discovery**: Automatic Switch discovery on local network (fallback)
+- **Auto Method Selection**: Intelligently chooses USB or FTP based on availability
 - Configuration stored in `~/.config/send_to_switch/config.yaml`
 - Polls server every 3 seconds for new games
-- Sequential FTP transfers (one at a time)
-- Progress reporting every 2 seconds (framework in place)
+- Sequential transfers (one at a time, USB or FTP)
+- Progress reporting every 2 seconds
 - Rich TUI showing:
-  - Connection status
+  - Connection status (USB or FTP)
   - Queue size
   - Transfer statistics
   - Current task
-  - Switch IP address
+  - Switch IP address (for FTP mode)
 
 #### Configuration:
 ```yaml
@@ -121,11 +133,12 @@ Accessible from user dropdown menu:
 ```
 1. Client polls /api/send-queue every 3 seconds
 2. If queue has items, client:
-   a. Marks first item as "processing"
-   b. Discovers Switch if needed (via network scan)
-   c. Initiates FTP transfer via Sphaira
-   d. Reports progress every 2 seconds (framework ready)
-   e. Marks as "completed" or "failed"
+   a. Detects connection type (USB preferred, FTP fallback)
+   b. Marks first item as "processing"
+   c. For USB: Direct transfer via USB using Tinfoil/Awoo protocol
+   d. For FTP: Discovers Switch if needed (via network scan), initiates FTP transfer
+   e. Reports progress every 2 seconds
+   f. Marks as "completed" or "failed"
 3. Client moves to next item in queue
 ```
 
@@ -166,17 +179,20 @@ Accessible from user dropdown menu:
 httpx     # HTTP client for cartel.py
 tqdm      # Progress bars for sphaira.py
 rich      # TUI framework for send_to_switch.py
+pyusb     # USB device communication for USB transfers
 ```
 
 ## Known Limitations
 
-1. **Progress Callback Integration**: The framework for reporting progress during transfers is in place, but requires modifications to `sphaira.py` to call the progress callback. Currently, progress is tracked but not updated in real-time during the actual transfer.
+1. **Progress Reporting**: Progress is reported during transfers with real-time updates to the TUI and server.
 
-2. **Single Transfer at a Time**: By design, only one game is transferred at a time to avoid overwhelming the Switch or network. Additional items wait in the queue.
+2. **Single Transfer at a Time**: By design, only one game is transferred at a time to avoid overwhelming the Switch or connection. Additional items wait in the queue.
 
-3. **Network Requirements**: Both the PC running the client and the Nintendo Switch must be on the same local network for FTP transfers to work.
+3. **USB Requirements**: For USB transfers, the Switch must be connected via USB cable and running Sphaira/Awoo installer in USB mode.
 
-4. **Sphaira Dependency**: The Switch must be running Sphaira with FTP server enabled on port 5000.
+4. **Network Requirements**: For FTP transfers (when USB not available), both the PC and Switch must be on the same local network, and Sphaira FTP server must be enabled on port 5000.
+
+5. **USB Library**: On Linux, udev rules may be needed for non-root USB access. On Windows, Zadig driver installation may be required.
 
 ## Testing
 
@@ -188,13 +204,13 @@ rich      # TUI framework for send_to_switch.py
 
 ## Future Enhancements
 
-1. **Full Progress Integration**: Modify `sphaira.py` to accept and call progress callbacks during chunk transfers
-2. **Retry Logic**: Automatic retry for failed transfers
-3. **Bandwidth Limiting**: Configurable transfer speed limits
-4. **Multiple Switches**: Support for managing multiple Switch consoles
-5. **Priority Queue**: Allow users to reorder queue items
-6. **Notifications**: Desktop/mobile notifications when transfers complete
-7. **Transfer History**: Long-term storage of completed/failed transfers with statistics
+1. **Retry Logic**: Automatic retry for failed transfers
+2. **Bandwidth Limiting**: Configurable transfer speed limits
+3. **Multiple Switches**: Support for managing multiple Switch consoles via USB or network
+4. **Priority Queue**: Allow users to reorder queue items
+5. **Notifications**: Desktop/mobile notifications when transfers complete
+6. **Transfer History**: Long-term storage of completed/failed transfers with statistics
+7. **MTP Support**: Add MTP protocol support as another transfer method
 
 ## Files Modified
 
