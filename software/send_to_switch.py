@@ -317,8 +317,16 @@ class SendToSwitchClient:
         """Stream HTTP game with progress reporting"""
         # Note: Progress callback integration with sphaira.py is not yet implemented
         # The sphaira library would need to be modified to accept and call the callback
-        # For now, just call the existing method
-        result = await self.sphaira.streamHttpGame(url=url, filename=filename)
+        # Pass API key in Authorization header for authenticated downloads
+        headers = {}
+        if self.config.get("api_key"):
+            headers["Authorization"] = f"Bearer {self.config['api_key']}"
+
+        result = await self.sphaira.streamHttpGame(
+            url=url,
+            filename=filename,
+            headers=headers if headers else None
+        )
         return result
 
     async def upload_with_progress(self, filename: str, progress_callback):
