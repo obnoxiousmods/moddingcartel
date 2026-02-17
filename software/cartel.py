@@ -95,6 +95,9 @@ class ModdingCartel:
                     return data.get("queue", [])
                 else:
                     raise Exception(f"Failed to get queue: {data.get('error', 'Unknown error')}")
+            elif response.status_code == 401:
+                # Invalid or revoked API key
+                raise Exception("Invalid API Key")
             else:
                 raise Exception(f"Request failed with status {response.status_code}: {response.text}")
 
@@ -195,6 +198,9 @@ class ModdingCartel:
                     return data
                 else:
                     raise Exception(f"Failed to update progress: {data.get('error', 'Unknown error')}")
+            elif response.status_code == 401:
+                # Invalid or revoked API key
+                raise Exception("Invalid API Key")
             else:
                 raise Exception(f"Request failed with status {response.status_code}: {response.text}")
 

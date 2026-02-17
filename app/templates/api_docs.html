@@ -112,6 +112,140 @@
                 <h4>Response</h4>
                 <p>If the entry is a URL, the API will redirect to it. If it's a local file, the API will serve the file for download.</p>
             </div>
+
+            <!-- Send to Switch -->
+            <div class="endpoint-card">
+                <div class="endpoint-header">
+                    <span class="method-badge post">POST</span>
+                    <span class="endpoint-path">/api/send-to-switch</span>
+                </div>
+                <p class="endpoint-description">Add a game to your Send to Switch queue. Supports both API key and cookie-based authentication.</p>
+                
+                <h4>Request Body</h4>
+                <ul class="param-list">
+                    <li><code>entry_id</code> (required) - The unique ID of the entry to send</li>
+                </ul>
+                
+                <h4>Request Example (API Key)</h4>
+                <div class="code-block">
+                    <pre><code>curl -X POST -H "Authorization: Bearer YOUR_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"entry_id": "123456"}' \
+  {{ request.url.scheme }}://{{ request.url.netloc }}/api/send-to-switch</code></pre>
+                </div>
+                
+                <h4>Request Example (Session Cookie)</h4>
+                <div class="code-block">
+                    <pre><code>curl -X POST -H "Content-Type: application/json" \
+  -b "session=YOUR_SESSION_COOKIE" \
+  -d '{"entry_id": "123456"}' \
+  {{ request.url.scheme }}://{{ request.url.netloc }}/api/send-to-switch</code></pre>
+                </div>
+                
+                <h4>Response Example</h4>
+                <div class="code-block">
+                    <pre><code>{
+  "success": true,
+  "message": "Game added to send queue"
+}</code></pre>
+                </div>
+            </div>
+
+            <!-- Get Send Queue -->
+            <div class="endpoint-card">
+                <div class="endpoint-header">
+                    <span class="method-badge get">GET</span>
+                    <span class="endpoint-path">/api/send-queue</span>
+                </div>
+                <p class="endpoint-description">Get pending items from your send queue. Used by the send_to_switch client.</p>
+                
+                <h4>Request Example</h4>
+                <div class="code-block">
+                    <pre><code>curl -H "Authorization: Bearer YOUR_API_KEY" \
+  {{ request.url.scheme }}://{{ request.url.netloc }}/api/send-queue</code></pre>
+                </div>
+                
+                <h4>Response Example</h4>
+                <div class="code-block">
+                    <pre><code>{
+  "success": true,
+  "queue": [
+    {
+      "queue_item_id": "789",
+      "entry_id": "123456",
+      "entry_name": "Super Mario Odyssey",
+      "entry_source": "/games/super_mario_odyssey.nsp",
+      "entry_size": 5606900000,
+      "status": "pending",
+      "created_at": "2026-02-17T02:00:00"
+    }
+  ]
+}</code></pre>
+                </div>
+            </div>
+
+            <!-- Update Queue Progress -->
+            <div class="endpoint-card">
+                <div class="endpoint-header">
+                    <span class="method-badge post">POST</span>
+                    <span class="endpoint-path">/api/send-queue/progress</span>
+                </div>
+                <p class="endpoint-description">Update progress information for a queue item. Used by the send_to_switch client.</p>
+                
+                <h4>Request Body</h4>
+                <ul class="param-list">
+                    <li><code>queue_item_id</code> (required) - The unique ID of the queue item</li>
+                    <li><code>progress_percent</code> (optional) - Progress percentage (0-100)</li>
+                    <li><code>bytes_transferred</code> (optional) - Number of bytes transferred</li>
+                    <li><code>transfer_speed</code> (optional) - Transfer speed in bytes per second</li>
+                    <li><code>status</code> (optional) - Status update ('processing', 'completed', 'failed')</li>
+                    <li><code>error_message</code> (optional) - Error message if failed</li>
+                </ul>
+                
+                <h4>Request Example</h4>
+                <div class="code-block">
+                    <pre><code>curl -X POST -H "Authorization: Bearer YOUR_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "queue_item_id": "789",
+    "progress_percent": 45,
+    "bytes_transferred": 2523105000,
+    "transfer_speed": 5242880
+  }' \
+  {{ request.url.scheme }}://{{ request.url.netloc }}/api/send-queue/progress</code></pre>
+                </div>
+                
+                <h4>Response Example</h4>
+                <div class="code-block">
+                    <pre><code>{
+  "success": true,
+  "message": "Progress updated"
+}</code></pre>
+                </div>
+            </div>
+        </section>
+
+        <!-- Authentication Methods -->
+        <section class="docs-section">
+            <h2>Authentication Methods</h2>
+            
+            <h3>1. API Key Authentication</h3>
+            <p>Best for programmatic access and client applications.</p>
+            <div class="code-block">
+                <code>Authorization: Bearer YOUR_API_KEY</code>
+            </div>
+            
+            <h3>2. Cookie-Based Authentication</h3>
+            <p>For web applications making requests from the browser. Cookies are automatically included when using <code>credentials: 'same-origin'</code> in fetch() or <code>withCredentials: true</code> in axios.</p>
+            <div class="code-block">
+                <pre><code>// JavaScript fetch with cookies
+fetch('/api/send-to-switch', {
+    method: 'POST',
+    credentials: 'same-origin',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ entry_id: '123456' })
+});</code></pre>
+            </div>
         </section>
 
         <!-- Code Examples -->
@@ -138,8 +272,18 @@ entries = response.json()["entries"]
 for entry in entries:
     print(f"{entry['name']} - {entry['file_type']}")
 
-# Download an entry
+# Send a game to Switch
 entry_id = entries[0]["id"]
+send_response = requests.post(
+    f"{BASE_URL}/send-to-switch",
+    headers=headers,
+    json={"entry_id": entry_id}
+)
+
+if send_response.json()["success"]:
+    print(f"Added {entries[0]['name']} to send queue!")
+
+# Download an entry
 download_response = requests.get(
     f"{BASE_URL}/download/{entry_id}",
     headers=headers,
@@ -169,6 +313,16 @@ const headers = {
 async function listEntries() {
     const response = await axios.get(`${BASE_URL}/list`, { headers });
     return response.data.entries;
+}
+
+// Send to Switch
+async function sendToSwitch(entryId) {
+    const response = await axios.post(
+        `${BASE_URL}/send-to-switch`,
+        { entry_id: entryId },
+        { headers }
+    );
+    return response.data;
 }
 
 // Download an entry
