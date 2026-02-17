@@ -28,7 +28,7 @@ async def settings_page(request: Request) -> Response:
         "settings/settings.html",
         {
             "title": "Settings",
-            "app_name": Config.get("app.name", "Switch Game Repository"),
+            "app_name": Config.get("app.name", "moddingcartel"),
             "user_stats": user_stats,
         },
     )
@@ -145,7 +145,7 @@ async def download_history_page(request: Request) -> Response:
             "settings/download_history.html",
             {
                 "title": "Download History",
-                "app_name": Config.get("app.name", "Switch Game Repository"),
+                "app_name": Config.get("app.name", "moddingcartel"),
                 "history": history,
             },
         )
@@ -156,7 +156,7 @@ async def download_history_page(request: Request) -> Response:
             "error.html",
             {
                 "title": "Error",
-                "app_name": Config.get("app.name", "Switch Game Repository"),
+                "app_name": Config.get("app.name", "moddingcartel"),
                 "error": "Failed to load download history",
             },
             status_code=500,
@@ -183,7 +183,7 @@ async def totp_setup_page(request: Request) -> Response:
             "settings/totp_setup.html",
             {
                 "title": "Two-Factor Authentication",
-                "app_name": Config.get("app.name", "Switch Game Repository"),
+                "app_name": Config.get("app.name", "moddingcartel"),
                 "totp_enabled": user.totp_enabled,
             },
         )
@@ -194,7 +194,7 @@ async def totp_setup_page(request: Request) -> Response:
             "error.html",
             {
                 "title": "Error",
-                "app_name": Config.get("app.name", "Switch Game Repository"),
+                "app_name": Config.get("app.name", "moddingcartel"),
                 "error": "Failed to load TOTP setup page",
             },
             status_code=500,
@@ -230,7 +230,7 @@ async def totp_enable(request: Request) -> Response:
         secret = pyotp.random_base32()
 
         # Generate provisioning URI for QR code
-        app_name = Config.get("app.name", "Switch Game Repository")
+        app_name = Config.get("app.name", "moddingcartel")
         totp = pyotp.TOTP(secret)
         provisioning_uri = totp.provisioning_uri(
             name=user.username, issuer_name=app_name

@@ -60,7 +60,7 @@ async def uploader_dashboard(request: Request) -> Response:
             {
                 "title": "Access Denied",
                 "error_message": "You do not have permission to access the uploader dashboard.",
-                "app_name": Config.get("app.name", "Switch Game Repository"),
+                "app_name": Config.get("app.name", "moddingcartel"),
             },
             status_code=403,
         )
@@ -80,7 +80,7 @@ async def uploader_dashboard(request: Request) -> Response:
         "uploader/dashboard.html",
         {
             "title": "Uploader Dashboard",
-            "app_name": Config.get("app.name", "Switch Game Repository"),
+            "app_name": Config.get("app.name", "moddingcartel"),
             "pending_game_requests": len(game_requests),
             "upload_stats": upload_stats,
             "is_admin": is_admin,
@@ -110,7 +110,7 @@ async def uploader_game_requests(request: Request) -> Response:
             {
                 "title": "Access Denied",
                 "error_message": "You do not have permission to access this page.",
-                "app_name": Config.get("app.name", "Switch Game Repository"),
+                "app_name": Config.get("app.name", "moddingcartel"),
             },
             status_code=403,
         )
@@ -132,7 +132,7 @@ async def uploader_game_requests(request: Request) -> Response:
         "uploader/game_requests.html",
         {
             "title": "Game Requests",
-            "app_name": Config.get("app.name", "Switch Game Repository"),
+            "app_name": Config.get("app.name", "moddingcartel"),
             "requests": game_requests,
             "status_filter": status_filter,
             "is_admin": is_admin,
@@ -278,7 +278,7 @@ async def uploader_upload_page(request: Request) -> Response:
             {
                 "title": "Access Denied",
                 "error_message": "You do not have permission to upload games.",
-                "app_name": Config.get("app.name", "Switch Game Repository"),
+                "app_name": Config.get("app.name", "moddingcartel"),
             },
             status_code=403,
         )
@@ -288,7 +288,7 @@ async def uploader_upload_page(request: Request) -> Response:
         "uploader/upload.html",
         {
             "title": "Upload Game",
-            "app_name": Config.get("app.name", "Switch Game Repository"),
+            "app_name": Config.get("app.name", "moddingcartel"),
             "is_admin": is_admin,
             "is_moderator": is_mod,
             "upload_endpoint": Config.UPLOAD_ENDPOINT(),

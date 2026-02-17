@@ -280,7 +280,7 @@ async def admin_dashboard(request: Request) -> Response:
             {
                 "title": "Access Denied",
                 "error_message": "You do not have permission to access the admin dashboard.",
-                "app_name": Config.get("app.name", "Switch Game Repository"),
+                "app_name": Config.get("app.name", "moddingcartel"),
             },
             status_code=403,
         )
@@ -290,7 +290,7 @@ async def admin_dashboard(request: Request) -> Response:
         "admin/dashboard.html",
         {
             "title": "Admin Dashboard",
-            "app_name": Config.get("app.name", "Switch Game Repository"),
+            "app_name": Config.get("app.name", "moddingcartel"),
             "db_host": Config.get("database.host", "127.0.0.1"),
             "db_name": Config.get("database.database", "switch_db"),
         },
@@ -313,7 +313,7 @@ async def admin_directories(request: Request) -> Response:
             {
                 "title": "Access Denied",
                 "error_message": "You do not have permission to access the admin dashboard.",
-                "app_name": Config.get("app.name", "Switch Game Repository"),
+                "app_name": Config.get("app.name", "moddingcartel"),
             },
             status_code=403,
         )
@@ -342,7 +342,7 @@ async def admin_directories(request: Request) -> Response:
         "admin/directories.html",
         {
             "title": "Directory Management",
-            "app_name": Config.get("app.name", "Switch Game Repository"),
+            "app_name": Config.get("app.name", "moddingcartel"),
             "directories": directories,
         },
     )
@@ -677,7 +677,7 @@ async def admin_users(request: Request) -> Response:
             {
                 "title": "Access Denied",
                 "error_message": "You do not have permission to access the admin dashboard.",
-                "app_name": Config.get("app.name", "Switch Game Repository"),
+                "app_name": Config.get("app.name", "moddingcartel"),
             },
             status_code=403,
         )
@@ -700,7 +700,7 @@ async def admin_users(request: Request) -> Response:
         "admin/users.html",
         {
             "title": "User Management",
-            "app_name": Config.get("app.name", "Switch Game Repository"),
+            "app_name": Config.get("app.name", "moddingcartel"),
             "users": users,
         },
     )
@@ -902,7 +902,7 @@ async def admin_api_keys(request: Request) -> Response:
             {
                 "title": "Unauthorized",
                 "error": "You must be an administrator to access this page",
-                "app_name": Config.get("app.name", "Switch Game Repository"),
+                "app_name": Config.get("app.name", "moddingcartel"),
             },
             status_code=403,
         )
@@ -923,7 +923,7 @@ async def admin_api_keys(request: Request) -> Response:
         "admin/api_keys.html",
         {
             "title": "API Key Management",
-            "app_name": Config.get("app.name", "Switch Game Repository"),
+            "app_name": Config.get("app.name", "moddingcartel"),
             "api_keys": all_api_keys,
         },
     )
@@ -981,7 +981,7 @@ async def admin_user_api_usage(request: Request) -> Response:
             {
                 "title": "Unauthorized",
                 "error": "You must be an administrator to access this page",
-                "app_name": Config.get("app.name", "Switch Game Repository"),
+                "app_name": Config.get("app.name", "moddingcartel"),
             },
             status_code=403,
         )
@@ -999,7 +999,7 @@ async def admin_user_api_usage(request: Request) -> Response:
                 {
                     "title": "User Not Found",
                     "error": "The specified user was not found",
-                    "app_name": Config.get("app.name", "Switch Game Repository"),
+                    "app_name": Config.get("app.name", "moddingcartel"),
                 },
                 status_code=404,
             )
@@ -1012,7 +1012,7 @@ async def admin_user_api_usage(request: Request) -> Response:
             "admin/user_api_usage.html",
             {
                 "title": f"API Usage - {user.get('username')}",
-                "app_name": Config.get("app.name", "Switch Game Repository"),
+                "app_name": Config.get("app.name", "moddingcartel"),
                 "user": user,
                 "usage_stats": usage_stats,
                 "recent_usage": recent_usage,
@@ -1040,7 +1040,7 @@ async def admin_user_api_usage(request: Request) -> Response:
             "admin/api_usage_overview.html",
             {
                 "title": "API Usage Overview",
-                "app_name": Config.get("app.name", "Switch Game Repository"),
+                "app_name": Config.get("app.name", "moddingcartel"),
                 "user_usage_list": user_usage_list,
             },
         )
@@ -1059,7 +1059,7 @@ async def admin_audit_logs(request: Request) -> Response:
             {
                 "title": "Unauthorized",
                 "error": "You must be an administrator to access this page",
-                "app_name": Config.get("app.name", "Switch Game Repository"),
+                "app_name": Config.get("app.name", "moddingcartel"),
             },
             status_code=403,
         )
@@ -1092,7 +1092,7 @@ async def admin_audit_logs(request: Request) -> Response:
         "admin/audit_logs.html",
         {
             "title": "Audit Logs",
-            "app_name": Config.get("app.name", "Switch Game Repository"),
+            "app_name": Config.get("app.name", "moddingcartel"),
             "logs": logs,
             "stats": stats,
             "unique_actions": unique_actions,
@@ -1115,7 +1115,7 @@ async def admin_activity_logs(request: Request) -> Response:
             {
                 "title": "Unauthorized",
                 "error": "You must be an administrator to access this page",
-                "app_name": Config.get("app.name", "Switch Game Repository"),
+                "app_name": Config.get("app.name", "moddingcartel"),
             },
             status_code=403,
         )
@@ -1150,7 +1150,7 @@ async def admin_activity_logs(request: Request) -> Response:
         "admin/activity_logs.html",
         {
             "title": "Activity Logs",
-            "app_name": Config.get("app.name", "Switch Game Repository"),
+            "app_name": Config.get("app.name", "moddingcartel"),
             "logs": logs,
             "stats": stats,
             "unique_event_types": unique_event_types,
@@ -1173,7 +1173,7 @@ async def admin_storage_info(request: Request) -> Response:
             {
                 "title": "Unauthorized",
                 "error": "You must be an administrator to access this page",
-                "app_name": Config.get("app.name", "Switch Game Repository"),
+                "app_name": Config.get("app.name", "moddingcartel"),
             },
             status_code=403,
         )
@@ -1265,7 +1265,7 @@ async def admin_storage_info(request: Request) -> Response:
         "admin/storage_info.html",
         {
             "title": "Storage Information",
-            "app_name": Config.get("app.name", "Switch Game Repository"),
+            "app_name": Config.get("app.name", "moddingcartel"),
             "storage_data": storage_data,
             "total_games": total_games,
             "total_entries": total_entries,
@@ -1287,7 +1287,7 @@ async def admin_upload_statistics(request: Request) -> Response:
             {
                 "title": "Access Denied",
                 "error_message": "You do not have permission to access this page.",
-                "app_name": Config.get("app.name", "Switch Game Repository"),
+                "app_name": Config.get("app.name", "moddingcartel"),
             },
             status_code=403,
         )
@@ -1303,7 +1303,7 @@ async def admin_upload_statistics(request: Request) -> Response:
         "admin/upload_statistics.html",
         {
             "title": "Upload Statistics",
-            "app_name": Config.get("app.name", "Switch Game Repository"),
+            "app_name": Config.get("app.name", "moddingcartel"),
             "uploader_stats": uploader_stats,
             "overall_stats": overall_stats,
         },
@@ -1330,7 +1330,7 @@ async def admin_reports(request: Request) -> Response:
             {
                 "title": "Access Denied",
                 "error_message": "You do not have permission to access this page.",
-                "app_name": Config.get("app.name", "Switch Game Repository"),
+                "app_name": Config.get("app.name", "moddingcartel"),
             },
             status_code=403,
         )
@@ -1350,7 +1350,7 @@ async def admin_reports(request: Request) -> Response:
         "admin/reports.html",
         {
             "title": "File Reports",
-            "app_name": Config.get("app.name", "Switch Game Repository"),
+            "app_name": Config.get("app.name", "moddingcartel"),
             "reports": reports,
             "current_status": status,
             "open_count": open_count,

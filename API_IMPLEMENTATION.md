@@ -1,7 +1,7 @@
 # API Key Management System - Implementation Summary
 
 ## Overview
-This implementation adds a comprehensive API key management system to the Switch Game Repository, enabling users to integrate the downloader into their applications programmatically.
+This implementation adds a comprehensive API key management system to the moddingcartel, enabling users to integrate the downloader into their applications programmatically.
 
 ## Features Implemented
 

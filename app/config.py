@@ -19,7 +19,7 @@ class Config:
             cls._config = {
                 "initialized": False,
                 "app": {
-                    "name": "Switch Game Repository",
+                    "name": "moddingcartel",
                     "debug": True,
                 },
                 "database": {},
@@ -81,7 +81,7 @@ class Config:
         cls._config = {
             "initialized": True,
             "app": {
-                "name": data.get("website_name", "Switch Game Repository"),
+                "name": data.get("website_name", "moddingcartel"),
                 "debug": True,
             },
             "database": {
@@ -100,7 +100,7 @@ class Config:
     @classmethod
     def APP_NAME(cls) -> str:
         """Get application name"""
-        return cls.get("app.name", "Switch Game Repository")
+        return cls.get("app.name", "moddingcartel")
 
     @classmethod
     def DEBUG(cls) -> bool:

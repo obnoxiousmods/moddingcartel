@@ -1,4 +1,4 @@
-# Switch Game Repository 🎮
+# moddingcartel 🎮
 
 A modern community platform for managing and distributing Nintendo Switch game files (.nsp, .nsz, .xci) with user authentication, role-based access control, and API key management.
 
@@ -178,7 +178,7 @@ Configuration is stored in `app/config.yaml` (auto-generated during initializati
 ```yaml
 initialized: true
 app:
-  name: Switch Game Repository
+  name: moddingcartel
   debug: true
 database:
   host: 127.0.0.1

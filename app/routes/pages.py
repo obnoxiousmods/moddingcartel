@@ -39,7 +39,7 @@ async def index(request: Request) -> Response:
         "index.html",
         {
             "title": "Home",
-            "app_name": Config.get("app.name", "Switch Game Repository"),
+            "app_name": Config.get("app.name", "moddingcartel"),
             "is_moderator": is_moderator,
             "pending_count": pending_count,
             "system_stats": system_stats,
@@ -71,7 +71,7 @@ async def search_page(request: Request) -> Response:
         "search.html",
         {
             "title": "Search Games",
-            "app_name": Config.get("app.name", "Switch Game Repository"),
+            "app_name": Config.get("app.name", "moddingcartel"),
             "is_moderator": is_moderator,
         },
     )
@@ -88,6 +88,6 @@ async def api_docs_page(request: Request) -> Response:
         "api_docs.html",
         {
             "title": "API Documentation",
-            "app_name": Config.get("app.name", "Switch Game Repository"),
+            "app_name": Config.get("app.name", "moddingcartel"),
         },
     )

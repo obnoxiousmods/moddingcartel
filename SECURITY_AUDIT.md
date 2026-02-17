@@ -1,4 +1,4 @@
-# Security Audit Report - Switch Game Repository
+# Security Audit Report - moddingcartel
 **Date:** 2026-02-13  
 **Audited By:** GitHub Copilot Security Agent
 

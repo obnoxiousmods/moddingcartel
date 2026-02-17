@@ -25,7 +25,7 @@ async def login_page(request: Request) -> Response:
         "auth/login.html",
         {
             "title": "Login",
-            "app_name": Config.get("app.name", "Switch Game Repository"),
+            "app_name": Config.get("app.name", "moddingcartel"),
         },
     )
 
@@ -135,7 +135,7 @@ async def register_page(request: Request) -> Response:
         "auth/register.html",
         {
             "title": "Register",
-            "app_name": Config.get("app.name", "Switch Game Repository"),
+            "app_name": Config.get("app.name", "moddingcartel"),
         },
     )
 

@@ -35,7 +35,7 @@ async def mod_dashboard(request: Request) -> Response:
             {
                 "title": "Access Denied",
                 "error_message": "You do not have permission to access the moderator dashboard.",
-                "app_name": Config.get("app.name", "Switch Game Repository"),
+                "app_name": Config.get("app.name", "moddingcartel"),
             },
             status_code=403,
         )
@@ -48,7 +48,7 @@ async def mod_dashboard(request: Request) -> Response:
         "mod/dashboard.html",
         {
             "title": "Moderator Dashboard",
-            "app_name": Config.get("app.name", "Switch Game Repository"),
+            "app_name": Config.get("app.name", "moddingcartel"),
             "pending_count": len(pending_requests),
             "is_admin": is_admin,
         },
@@ -75,7 +75,7 @@ async def mod_requests(request: Request) -> Response:
             {
                 "title": "Access Denied",
                 "error_message": "You do not have permission to access this page.",
-                "app_name": Config.get("app.name", "Switch Game Repository"),
+                "app_name": Config.get("app.name", "moddingcartel"),
             },
             status_code=403,
         )
@@ -94,7 +94,7 @@ async def mod_requests(request: Request) -> Response:
         "mod/requests.html",
         {
             "title": "Manage Requests",
-            "app_name": Config.get("app.name", "Switch Game Repository"),
+            "app_name": Config.get("app.name", "moddingcartel"),
             "requests": requests,
             "status_filter": status_filter,
             "is_admin": is_admin,
@@ -399,7 +399,7 @@ async def user_requests_page(request: Request) -> Response:
         "user/requests.html",
         {
             "title": "My Requests",
-            "app_name": Config.get("app.name", "Switch Game Repository"),
+            "app_name": Config.get("app.name", "moddingcartel"),
             "requests": user_requests,
         },
     )
@@ -425,7 +425,7 @@ async def mod_corrupt_games(request: Request) -> Response:
             {
                 "title": "Access Denied",
                 "error_message": "You do not have permission to access this page.",
-                "app_name": Config.get("app.name", "Switch Game Repository"),
+                "app_name": Config.get("app.name", "moddingcartel"),
             },
             status_code=403,
         )
@@ -438,7 +438,7 @@ async def mod_corrupt_games(request: Request) -> Response:
         "mod/corrupt_games.html",
         {
             "title": "Corrupt Games",
-            "app_name": Config.get("app.name", "Switch Game Repository"),
+            "app_name": Config.get("app.name", "moddingcartel"),
             "entries": corrupt_entries,
             "is_admin": is_admin,
         },

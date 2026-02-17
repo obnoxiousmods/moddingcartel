@@ -1,4 +1,4 @@
-// Switch Game Repository - Reactive Search
+// moddingcartel - Reactive Search
 (function() {
     'use strict';
     
