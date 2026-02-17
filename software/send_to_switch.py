@@ -168,16 +168,24 @@ class SendToSwitchClient:
             logger.error(f"Discovery error: {e}")
             return False
 
-    async def process_queue(self):
-        """Process the send queue"""
+    async def process_queue(self, queue=None):
+        """
+        Process the send queue.
+
+        Args:
+            queue: Optional pre-fetched queue. If None, will fetch from server.
+                   Note: When providing a queue, ensure stats are updated separately.
+        """
         try:
-            # Get queue from server
-            self.stats["status"] = "Fetching queue..."
-            queue = self.api_client.get_send_queue()
-            self.stats["current_queue_size"] = len(queue)
-            self.stats["last_poll_time"] = time.time()
-            
-            logger.debug(f"Fetched queue: {len(queue)} items")
+            # Get queue from server if not provided
+            if queue is None:
+                self.stats["status"] = "Fetching queue..."
+                queue = self.api_client.get_send_queue()
+                # Update stats when fetching queue ourselves
+                self.stats["current_queue_size"] = len(queue)
+                self.stats["last_poll_time"] = time.time()
+
+            logger.debug(f"Processing queue: {len(queue)} items")
 
             if not queue:
                 self.stats["status"] = "Queue is empty, waiting..."
@@ -389,6 +397,25 @@ class SendToSwitchClient:
 
         return layout
 
+    async def update_queue_stats(self):
+        """
+        Fetch queue from API and update statistics.
+
+        Returns:
+            List of queue items for subsequent processing, or empty list on error.
+        """
+        try:
+            # Get queue from server
+            queue = self.api_client.get_send_queue()
+            self.stats["current_queue_size"] = len(queue)
+            self.stats["last_poll_time"] = time.time()
+            logger.debug(f"Queue stats updated: {len(queue)} items")
+            return queue
+        except Exception as e:
+            logger.error(f"Error updating queue stats: {e}")
+            self.stats["status"] = f"Error fetching queue: {e}"
+            return []
+
     async def run_loop(self):
         """Main polling loop"""
         self.running = True
@@ -396,11 +423,14 @@ class SendToSwitchClient:
         try:
             with Live(self.generate_tui(), refresh_per_second=1, screen=True) as live:
                 while self.running:
-                    # Update display
+                    # Update queue stats and get queue
+                    queue = await self.update_queue_stats()
+
+                    # Update display with fresh stats
                     live.update(self.generate_tui())
 
-                    # Process queue
-                    await self.process_queue()
+                    # Process queue (pass queue to avoid duplicate fetch)
+                    await self.process_queue(queue)
 
                     # Wait for next poll
                     await asyncio.sleep(POLL_INTERVAL)
