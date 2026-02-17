@@ -236,6 +236,10 @@ class SendToSwitchClient:
                         )
                         last_progress_update = current_time
                     except Exception as e:
+                        error_str = str(e)
+                        if "Invalid API Key" in error_str:
+                            logger.error("API key is invalid or revoked. Please re-authenticate.")
+                            raise
                         logger.warning(f"Failed to update progress: {e}")
 
                 last_bytes = bytes_transferred
@@ -278,6 +282,10 @@ class SendToSwitchClient:
 
             except Exception as e:
                 error_msg = str(e)
+                # Check if it's an invalid API key error
+                if "Invalid API Key" in error_msg:
+                    logger.error("API key is invalid or revoked. Please re-authenticate.")
+                    raise
                 self.api_client.update_queue_progress(
                     queue_item_id=queue_item_id,
                     status="failed",
@@ -290,6 +298,18 @@ class SendToSwitchClient:
             self.current_task = None
 
         except Exception as e:
+            error_str = str(e)
+            # Check if it's an invalid API key error
+            if "Invalid API Key" in error_str:
+                self.stats["status"] = "Invalid API Key - Exiting..."
+                logger.error("API key is invalid or revoked. Clearing config and exiting.")
+                # Clear the API key from config
+                if "api_key" in self.config:
+                    del self.config["api_key"]
+                    self.save_config()
+                # Stop the client
+                self.running = False
+                raise
             self.stats["status"] = f"Error processing queue: {e}"
             logger.error(f"Queue processing error: {e}", exc_info=True)
 
