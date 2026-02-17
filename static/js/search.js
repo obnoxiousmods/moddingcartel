@@ -1196,8 +1196,6 @@
                 })
             });
             
-            const data = await response.json();
-            
             if (response.status === 401) {
                 Toast.error('Authentication required. Please log in.');
                 return;
