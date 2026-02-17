@@ -29,8 +29,8 @@ pip install -r requirements.txt
 
 2. For USB support on Linux, you may need to add udev rules:
 ```bash
-# Create udev rules file
-sudo vim /etc/udev/rules.d/99-NS.rules
+# Create udev rules file (using your preferred text editor, e.g., nano or vim)
+sudo nano /etc/udev/rules.d/99-NS.rules
 
 # Add this line:
 SUBSYSTEM=="usb", ATTRS{idVendor}=="057e", ATTRS{idProduct}=="3000", MODE="0666"

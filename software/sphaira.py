@@ -2,6 +2,7 @@ import asyncio
 import os
 import struct
 import time
+from typing import Tuple
 
 import aiofiles
 import aioftp
@@ -14,6 +15,11 @@ try:
     USB_AVAILABLE = True
 except ImportError:
     USB_AVAILABLE = False
+
+
+# Constants
+USB_CHUNK_SIZE = 1024 * 1024  # 1MB chunks for USB transfers
+FTP_CHUNK_SIZE = 1024 * 1024  # 1MB chunks for FTP transfers
 
 
 class SphairaDownloader:
@@ -112,7 +118,7 @@ class SphairaDownloader:
         if len(payload) > 0:
             self.usb_out_ep.write(payload, timeout=timeout)
 
-    def _usb_recv_packet(self, timeout: int = 60000) -> tuple[int, bytes]:
+    def _usb_recv_packet(self, timeout: int = 60000) -> Tuple[int, bytes]:
         """Receive a packet over USB using Tinfoil/Awoo protocol"""
         if not self.usb_device or not self.usb_in_ep:
             raise RuntimeError("USB device not initialized")
@@ -244,7 +250,7 @@ class SphairaDownloader:
         try:
             async with aiofiles.open(file_path, "rb") as f:
                 while True:
-                    chunk = await f.read(1024 * 1024)  # 1MB chunks
+                    chunk = await f.read(USB_CHUNK_SIZE)
                     if not chunk:
                         break
 
@@ -435,7 +441,7 @@ class SphairaDownloader:
                 ) as stream:
                     async with aiofiles.open(file_path, "rb") as f:
                         while True:
-                            chunk = await f.read(1024 * 1024)
+                            chunk = await f.read(FTP_CHUNK_SIZE)
                             if not chunk:
                                 break
                             await stream.write(chunk)
@@ -510,106 +516,106 @@ class SphairaDownloader:
                 if not found:
                     return {"error": "Could not find Sphaira on the network"}
 
-        total_size = None
+            total_size = None
 
-        # Try HEAD to get size
-        try:
-            async with httpx.AsyncClient(
-                timeout=httpx.Timeout(connect_timeout, read=read_timeout),
-                    proxy=proxy,
-                follow_redirects=True,
-            ) as client:
-                resp = await client.head(url, headers=headers, cookies=cookies)
-                if resp.status_code == 200 and "Content-Length" in resp.headers:
-                    total_size = int(resp.headers["Content-Length"])
-        except Exception as e:
-            if not progress_callback and self.debug:
-                tqdm.write(f"HEAD request failed (size unknown): {e}")
+            # Try HEAD to get size
+            try:
+                async with httpx.AsyncClient(
+                    timeout=httpx.Timeout(connect_timeout, read=read_timeout),
+                        proxy=proxy,
+                    follow_redirects=True,
+                ) as client:
+                    resp = await client.head(url, headers=headers, cookies=cookies)
+                    if resp.status_code == 200 and "Content-Length" in resp.headers:
+                        total_size = int(resp.headers["Content-Length"])
+            except Exception as e:
+                if not progress_callback and self.debug:
+                    tqdm.write(f"HEAD request failed (size unknown): {e}")
 
-        # Only use tqdm if no progress callback is provided
-        pbar = None
-        bytes_transferred = 0
-        if not progress_callback:
-            pbar = tqdm(
-                total=total_size,
-                unit='B',
-                unit_scale=True,
-                unit_divisor=1024,
-                desc="Streaming to Sphaira",
-                dynamic_ncols=True,
-                miniters=1,
-            )
+            # Only use tqdm if no progress callback is provided
+            pbar = None
+            bytes_transferred = 0
+            if not progress_callback:
+                pbar = tqdm(
+                    total=total_size,
+                    unit='B',
+                    unit_scale=True,
+                    unit_divisor=1024,
+                    desc="Streaming to Sphaira",
+                    dynamic_ncols=True,
+                    miniters=1,
+                )
 
-        try:
-            async with aioftp.Client.context(
-                host=self.ip_address, port=5000, user="anon", password=""
-            ) as ftp_client:
-                try:
-                    st = await ftp_client.stat(self.install_folder)
-                    if st["type"] != "dir":
+            try:
+                async with aioftp.Client.context(
+                    host=self.ip_address, port=5000, user="anon", password=""
+                ) as ftp_client:
+                    try:
+                        st = await ftp_client.stat(self.install_folder)
+                        if st["type"] != "dir":
+                            if pbar:
+                                pbar.close()
+                            return {"error": f"{self.install_folder} exists but is not a directory"}
+                    except aioftp.StatusCodeError as e:
                         if pbar:
                             pbar.close()
-                        return {"error": f"{self.install_folder} exists but is not a directory"}
-                except aioftp.StatusCodeError as e:
-                    if pbar:
-                        pbar.close()
-                    if e.code == 550:
-                        return {"error": f"{self.install_folder} not found → is this Sphaira?"}
+                        if e.code == 550:
+                            return {"error": f"{self.install_folder} not found → is this Sphaira?"}
 
-                destination = f"{self.install_folder}/{filename}"
+                    destination = f"{self.install_folder}/{filename}"
 
-                async with ftp_client.upload_stream(destination) as ftp_stream:
-                    async with httpx.AsyncClient(
-                        timeout=httpx.Timeout(connect_timeout, read=read_timeout),
-                        proxy=proxy,
-                        follow_redirects=True,
-                    ) as http_client:
-                        async with http_client.stream(
-                            "GET", url, headers=headers, cookies=cookies
-                        ) as response:
-                            response.raise_for_status()
+                    async with ftp_client.upload_stream(destination) as ftp_stream:
+                        async with httpx.AsyncClient(
+                            timeout=httpx.Timeout(connect_timeout, read=read_timeout),
+                            proxy=proxy,
+                            follow_redirects=True,
+                        ) as http_client:
+                            async with http_client.stream(
+                                "GET", url, headers=headers, cookies=cookies
+                            ) as response:
+                                response.raise_for_status()
 
-                            if not progress_callback and self.debug:
-                                tqdm.write(f"Streaming: {url} → {self.ip_address}:{destination}")
+                                if not progress_callback and self.debug:
+                                    tqdm.write(f"Streaming: {url} → {self.ip_address}:{destination}")
 
-                            async for chunk in response.aiter_bytes():
-                                if not chunk:
-                                    break
-                                await ftp_stream.write(chunk)
-                                chunk_size = len(chunk)
-                                bytes_transferred += chunk_size
+                                async for chunk in response.aiter_bytes():
+                                    if not chunk:
+                                        break
+                                    await ftp_stream.write(chunk)
+                                    chunk_size = len(chunk)
+                                    bytes_transferred += chunk_size
 
-                                if pbar:
-                                    pbar.update(chunk_size)
-                                elif progress_callback:
-                                    await progress_callback(chunk_size)
+                                    if pbar:
+                                        pbar.update(chunk_size)
+                                    elif progress_callback:
+                                        await progress_callback(chunk_size)
 
-            if pbar:
-                pbar.close()
-                tqdm.write(f"Stream finished: {filename}  ({pbar.n / (1024*1024):.1f} MiB)")
+                if pbar:
+                    pbar.close()
+                    tqdm.write(f"Stream finished: {filename}  ({pbar.n / (1024*1024):.1f} MiB)")
 
-            return {
-                "success": True,
-                "size_bytes": bytes_transferred if not pbar else pbar.n,
-                "filename": filename
-            }
+                return {
+                    "success": True,
+                    "size_bytes": bytes_transferred if not pbar else pbar.n,
+                    "filename": filename
+                }
 
-        except httpx.HTTPStatusError as e:
-            if pbar:
-                pbar.close()
-            return {"error": f"HTTP error {e.response.status_code}: {e}"}
-        except httpx.RequestError as e:
-            if pbar:
-                pbar.close()
-            return {"error": f"HTTP request failed: {e}"}
-        except aioftp.errors.AIOFTPException as e:
-            if pbar:
-                pbar.close()
-            return {"error": f"FTP error: {e}"}
-        except Exception as e:
-            if pbar:
-                pbar.close()
-            return {"error": f"Unexpected: {type(e).__name__} - {e}"}
+            except httpx.HTTPStatusError as e:
+                if pbar:
+                    pbar.close()
+                return {"error": f"HTTP error {e.response.status_code}: {e}"}
+            except httpx.RequestError as e:
+                if pbar:
+                    pbar.close()
+                return {"error": f"HTTP request failed: {e}"}
+            except aioftp.errors.AIOFTPException as e:
+                if pbar:
+                    pbar.close()
+                return {"error": f"FTP error: {e}"}
+            except Exception as e:
+                if pbar:
+                    pbar.close()
+                return {"error": f"Unexpected: {type(e).__name__} - {e}"}
 
         else:
             return {"error": f"Unsupported method: {method}"}
