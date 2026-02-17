@@ -10,3 +10,5 @@ argon2-cffi
 pyotp
 qrcode[pil]
 ruff
+aioftp
+progress
