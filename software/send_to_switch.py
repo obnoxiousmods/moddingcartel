@@ -295,14 +295,17 @@ class SendToSwitchClient:
 
     async def stream_with_progress(self, url: str, filename: str, progress_callback):
         """Stream HTTP game with progress reporting"""
-        # For now, use the existing streamHttpGame but we'll need to modify sphaira.py later
-        # to support progress callbacks
+        # Note: Progress callback integration with sphaira.py is not yet implemented
+        # The sphaira library would need to be modified to accept and call the callback
+        # For now, just call the existing method
         result = await self.sphaira.streamHttpGame(url=url, filename=filename)
         return result
 
     async def upload_with_progress(self, filename: str, progress_callback):
         """Upload local game with progress reporting"""
-        # For now, use the existing uploadLocalGame
+        # Note: Progress callback integration with sphaira.py is not yet implemented
+        # The sphaira library would need to be modified to accept and call the callback
+        # For now, just call the existing method
         result = await self.sphaira.uploadLocalGame(fileName=filename)
         return result
 

@@ -151,12 +151,6 @@ Process next game in queue
 
 ## Development
 
-### Running Tests
-
-```bash
-python /tmp/test_send_to_switch.py
-```
-
 ### Logging
 
 Logs are written to `send_to_switch.log` in the current directory.
