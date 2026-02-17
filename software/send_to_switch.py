@@ -188,7 +188,7 @@ class SendToSwitchClient:
             logger.debug(f"Processing queue: {len(queue)} items")
 
             if not queue:
-                self.stats["status"] = "Queue is empty, waiting..."
+                self.stats["status"] = "Ready! Start adding games to the queue..."
                 return
 
             # Process first item in queue
@@ -336,6 +336,9 @@ class SendToSwitchClient:
         if self.config.get("api_key"):
             headers["Authorization"] = f"Bearer {self.config['api_key']}"
 
+        # Set status to indicate streaming
+        self.stats["status"] = f"Installing: {filename}"
+
         result = await self.sphaira.streamHttpGame(
             url=url,
             filename=filename,
@@ -362,7 +365,7 @@ class SendToSwitchClient:
         )
 
         # Header
-        header_text = Text("Send to Switch Client", style="bold cyan", justify="center")
+        header_text = Text("moddingcartel", style="bold cyan", justify="center")
         layout["header"].update(Panel(header_text))
 
         # Body - Stats and Status
