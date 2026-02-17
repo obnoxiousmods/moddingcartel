@@ -2,20 +2,19 @@ import asyncio
 import os
 import struct
 import time
-from typing import Tuple, Optional
+from typing import Optional, Tuple
 
 import aiofiles
 import aioftp
 import httpx
-from tqdm import tqdm
-
 from sphaira_logger import (
-    setup_logger,
     log_hex_dump,
-    log_usb_packet,
     log_http_request,
-    log_http_response
+    log_http_response,
+    log_usb_packet,
+    setup_logger,
 )
+from tqdm import tqdm
 
 try:
     import usb.core
@@ -38,7 +37,7 @@ class SphairaDownloader:
         self.usb_device = None
         self.usb_in_ep = None
         self.usb_out_ep = None
-        
+
         # Setup comprehensive logging
         self.logger = setup_logger("sphaira", log_dir=log_dir, debug=debug)
         self.logger.info(f"SphairaDownloader initialized - IP: {ip_address}, Install folder: {install_folder}, Debug: {debug}")
@@ -49,7 +48,7 @@ class SphairaDownloader:
         Returns True if Switch is detected and USB endpoints are configured.
         """
         self.logger.info("Starting USB Switch detection...")
-        
+
         if not USB_AVAILABLE:
             self.logger.warning("pyusb not available - USB support disabled")
             if self.debug:
@@ -113,7 +112,7 @@ class SphairaDownloader:
                 self.usb_out_ep = out_ep
                 self.usb_in_ep = in_ep
 
-                self.logger.info(f"✓ Switch detected and configured via USB")
+                self.logger.info("✓ Switch detected and configured via USB")
                 if self.debug:
                     tqdm.write(f"✓ Switch detected via USB (VID:0x{dev.idVendor:04X}, PID:0x{dev.idProduct:04X})")
 
@@ -132,7 +131,7 @@ class SphairaDownloader:
     def _usb_send_packet(self, command: int, payload: bytes, timeout: int = 60000):
         """Send a packet over USB using Tinfoil/Awoo protocol"""
         self.logger.debug(f"_usb_send_packet called - Command: {command}, Payload size: {len(payload)}, Timeout: {timeout}ms")
-        
+
         if not self.usb_device or not self.usb_out_ep:
             self.logger.error("USB device not initialized")
             raise RuntimeError("USB device not initialized")
@@ -155,22 +154,22 @@ class SphairaDownloader:
         header += struct.pack('<H', 0)  # PacketCount
         header += struct.pack('<Q', 0)  # Timestamp
 
-        self.logger.debug(f"Sending USB packet header (32 bytes)")
+        self.logger.debug("Sending USB packet header (32 bytes)")
         log_hex_dump(self.logger, header, "USB SEND header - ")
-        
+
         try:
             bytes_written = self.usb_out_ep.write(header, timeout=timeout)
             self.logger.debug(f"Header written: {bytes_written} bytes")
-            
+
             if len(payload) > 0:
                 self.logger.debug(f"Sending USB packet payload ({len(payload)} bytes)")
                 log_hex_dump(self.logger, payload, "USB SEND payload - ", max_bytes=256)
                 bytes_written = self.usb_out_ep.write(payload, timeout=timeout)
                 self.logger.debug(f"Payload written: {bytes_written} bytes")
-            
+
             log_usb_packet(self.logger, "SEND", command, payload, f"(timeout={timeout}ms)")
             self.logger.info(f"USB packet sent successfully - Command: {command}, Total size: {32 + len(payload)} bytes")
-            
+
         except Exception as e:
             self.logger.error(f"USB send packet failed: {type(e).__name__} - {e}", exc_info=True)
             raise
@@ -178,7 +177,7 @@ class SphairaDownloader:
     def _usb_recv_packet(self, timeout: int = 60000) -> Tuple[int, bytes]:
         """Receive a packet over USB using Tinfoil/Awoo protocol"""
         self.logger.debug(f"_usb_recv_packet called - Timeout: {timeout}ms")
-        
+
         if not self.usb_device or not self.usb_in_ep:
             self.logger.error("USB device not initialized")
             raise RuntimeError("USB device not initialized")
@@ -197,7 +196,7 @@ class SphairaDownloader:
 
             command = struct.unpack('<I', header[4:8])[0]
             size = struct.unpack('<Q', header[8:16])[0]
-            
+
             self.logger.debug(f"Packet header decoded - Command: {command}, Size: {size}")
 
             # Read payload
@@ -210,9 +209,9 @@ class SphairaDownloader:
 
             log_usb_packet(self.logger, "RECV", command, payload, f"(timeout={timeout}ms)")
             self.logger.info(f"USB packet received successfully - Command: {command}, Total size: {32 + len(payload)} bytes")
-            
+
             return command, payload
-            
+
         except Exception as e:
             self.logger.error(f"USB receive packet failed: {type(e).__name__} - {e}", exc_info=True)
             raise
@@ -232,7 +231,7 @@ class SphairaDownloader:
         """
         self.logger.info(f"Starting network discovery - Port: {port}, Max concurrent: {max_concurrent}")
         self.logger.debug(f"Scan range: 192.168.{min(third_octets)}-{max(third_octets)}.{min(fourth_octets)}-{max(fourth_octets)}")
-        
+
         if self.ip_address:
             self.logger.info(f"Already have IP: {self.ip_address} — skipping discovery")
             if self.debug:
@@ -313,11 +312,11 @@ class SphairaDownloader:
     async def _usb_install_file(self, file_path: str, filename: str, file_size: int, progress_callback=None):
         """Install a file via USB using Tinfoil/Awoo protocol"""
         self.logger.info(f"Starting USB file install - File: {file_path}, Size: {file_size} bytes ({file_size / (1024*1024):.2f} MiB)")
-        
+
         # Send initial handshake - request to install
         install_request = f"install:/{filename}".encode('utf-8')
         self.logger.info(f"Sending USB install handshake for: {filename}")
-        
+
         try:
             await asyncio.get_event_loop().run_in_executor(
                 None, self._usb_send_packet, 1, install_request
@@ -334,14 +333,14 @@ class SphairaDownloader:
                 None, self._usb_recv_packet
             )
             self.logger.info(f"Received acknowledgment - Command: {cmd}, Response: {response}")
-            
+
             if cmd != 1 or response != b'OK':
                 error_msg = f"USB handshake failed: cmd={cmd}, response={response}"
                 self.logger.error(error_msg)
                 return {"error": error_msg}
-                
+
             self.logger.info("USB handshake successful, starting file transfer...")
-            
+
         except Exception as e:
             error_msg = f"Failed to receive USB handshake acknowledgment: {type(e).__name__} - {e}"
             self.logger.error(error_msg, exc_info=True)
@@ -352,7 +351,7 @@ class SphairaDownloader:
         bytes_transferred = 0
         chunk_count = 0
         start_time = time.time()
-        
+
         if not progress_callback:
             pbar = tqdm(
                 total=file_size,
@@ -372,7 +371,7 @@ class SphairaDownloader:
 
                     chunk_count += 1
                     chunk_size = len(chunk)
-                    
+
                     # Log every 50th chunk
                     if chunk_count % 50 == 0:
                         self.logger.debug(f"Sending chunk #{chunk_count}: {chunk_size} bytes")
@@ -407,9 +406,9 @@ class SphairaDownloader:
 
             elapsed_time = time.time() - start_time
             avg_speed = bytes_transferred / elapsed_time if elapsed_time > 0 else 0
-            
+
             self.logger.info("="*80)
-            self.logger.info(f"USB file transfer completed successfully!")
+            self.logger.info("USB file transfer completed successfully!")
             self.logger.info(f"Filename: {filename}")
             self.logger.info(f"Total bytes transferred: {bytes_transferred} ({bytes_transferred / (1024*1024):.2f} MiB)")
             self.logger.info(f"Total chunks sent: {chunk_count}")
@@ -430,21 +429,21 @@ class SphairaDownloader:
                 pbar.close()
             raise e
 
-    async def _usb_stream_http(self, url: str, filename: str, headers: Optional[dict] = None, 
+    async def _usb_stream_http(self, url: str, filename: str, headers: Optional[dict] = None,
                                cookies: Optional[dict] = None, proxy: Optional[str] = None,
-                               connect_timeout: float = 12.0, read_timeout: float = 60.0, 
+                               connect_timeout: float = 12.0, read_timeout: float = 60.0,
                                progress_callback=None):
         """Stream HTTP content directly to Switch via USB"""
         self.logger.info(f"Starting USB HTTP stream - URL: {url}, Filename: {filename}")
         self.logger.debug(f"Parameters - Headers: {headers}, Cookies: {cookies}, Proxy: {proxy}")
         self.logger.debug(f"Timeouts - Connect: {connect_timeout}s, Read: {read_timeout}s")
-        
+
         # Get file size via HEAD request
         total_size = None
         try:
             self.logger.info("Attempting HEAD request to get content size...")
             log_http_request(self.logger, "HEAD", url, headers, cookies)
-            
+
             async with httpx.AsyncClient(
                 timeout=httpx.Timeout(connect_timeout, read=read_timeout),
                 proxy=proxy,
@@ -452,7 +451,7 @@ class SphairaDownloader:
             ) as client:
                 resp = await client.head(url, headers=headers, cookies=cookies)
                 log_http_response(self.logger, resp.status_code, resp.headers)
-                
+
                 if resp.status_code == 200 and "Content-Length" in resp.headers:
                     total_size = int(resp.headers["Content-Length"])
                     self.logger.info(f"Content-Length from HEAD: {total_size} bytes ({total_size / (1024*1024):.2f} MiB)")
@@ -467,7 +466,7 @@ class SphairaDownloader:
         install_request = f"install:/{filename}".encode('utf-8')
         self.logger.info(f"Sending USB install handshake for: {filename}")
         self.logger.debug(f"Install request string: {install_request}")
-        
+
         try:
             await asyncio.get_event_loop().run_in_executor(
                 None, self._usb_send_packet, 1, install_request
@@ -484,14 +483,14 @@ class SphairaDownloader:
                 None, self._usb_recv_packet
             )
             self.logger.info(f"Received acknowledgment - Command: {cmd}, Response: {response}")
-            
+
             if cmd != 1 or response != b'OK':
                 error_msg = f"USB handshake failed: cmd={cmd}, response={response}"
                 self.logger.error(error_msg)
                 return {"error": error_msg}
-            
+
             self.logger.info("USB handshake successful, starting data transfer...")
-            
+
         except Exception as e:
             error_msg = f"Failed to receive USB handshake acknowledgment: {type(e).__name__} - {e}"
             self.logger.error(error_msg, exc_info=True)
@@ -501,7 +500,7 @@ class SphairaDownloader:
         bytes_transferred = 0
         chunk_count = 0
         start_time = time.time()
-        
+
         if not progress_callback:
             pbar = tqdm(
                 total=total_size,
@@ -514,9 +513,9 @@ class SphairaDownloader:
             )
 
         try:
-            self.logger.info(f"Starting HTTP GET request and streaming to USB...")
+            self.logger.info("Starting HTTP GET request and streaming to USB...")
             log_http_request(self.logger, "GET", url, headers, cookies)
-            
+
             async with httpx.AsyncClient(
                 timeout=httpx.Timeout(connect_timeout, read=read_timeout),
                 proxy=proxy,
@@ -535,7 +534,7 @@ class SphairaDownloader:
 
                         chunk_count += 1
                         chunk_size = len(chunk)
-                        
+
                         # Log every 100th chunk or large chunks
                         if chunk_count % 100 == 0 or chunk_size > USB_CHUNK_SIZE:
                             self.logger.debug(f"Processing chunk #{chunk_count}: {chunk_size} bytes")
@@ -571,9 +570,9 @@ class SphairaDownloader:
 
             elapsed_time = time.time() - start_time
             avg_speed = bytes_transferred / elapsed_time if elapsed_time > 0 else 0
-            
+
             self.logger.info("="*80)
-            self.logger.info(f"USB stream transfer completed successfully!")
+            self.logger.info("USB stream transfer completed successfully!")
             self.logger.info(f"Filename: {filename}")
             self.logger.info(f"Total bytes transferred: {bytes_transferred} ({bytes_transferred / (1024*1024):.2f} MiB)")
             self.logger.info(f"Total chunks sent: {chunk_count}")
@@ -659,7 +658,7 @@ class SphairaDownloader:
             pbar = None
             bytes_transferred = 0
             start_time = time.time()
-            
+
             if not progress_callback:
                 pbar = tqdm(
                     total=file_size,
@@ -714,20 +713,20 @@ class SphairaDownloader:
 
                 elapsed_time = time.time() - start_time
                 avg_speed = bytes_transferred / elapsed_time if elapsed_time > 0 else 0
-                
+
                 self.logger.info("="*80)
-                self.logger.info(f"FTP upload completed successfully!")
+                self.logger.info("FTP upload completed successfully!")
                 self.logger.info(f"Filename: {fileName}")
                 self.logger.info(f"Total bytes transferred: {bytes_transferred} ({bytes_transferred / (1024*1024):.2f} MiB)")
                 self.logger.info(f"Elapsed time: {elapsed_time:.2f} seconds")
                 self.logger.info(f"Average speed: {avg_speed / (1024*1024):.2f} MiB/s")
                 self.logger.info("="*80)
-                
+
                 if pbar:
                     pbar.close()
                     tqdm.write(f"Upload complete: {fileName}")
                 return {"success": True, "size_bytes": file_size}
-            
+
             except Exception as e:
                 error_msg = f"FTP upload error: {type(e).__name__} - {e}"
                 self.logger.error(error_msg, exc_info=True)
@@ -762,7 +761,7 @@ class SphairaDownloader:
         self.logger.info(f"streamHttpGame called - URL: {url}, Method: {method}")
         self.logger.debug(f"Parameters - Headers: {headers}, Cookies: {cookies}, Proxy: {proxy}")
         self.logger.debug(f"Timeouts - Connect: {connect_timeout}s, Read: {read_timeout}s, Chunk size: {chunk_size}")
-        
+
         if not filename:
             filename = url.split("/")[-1] or "downloaded_game.nsp"
             self.logger.debug(f"Filename extracted from URL: {filename}")
