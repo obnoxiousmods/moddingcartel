@@ -28,7 +28,8 @@ class SphairaDownloader:
         Returns True if found and verified, False otherwise
         """
         if self.ip_address:
-            tqdm.write(f"Already have IP: {self.ip_address} — skipping discovery")
+            if self.debug:
+                tqdm.write(f"Already have IP: {self.ip_address} — skipping discovery")
             return True
 
         semaphore = asyncio.Semaphore(max_concurrent)
@@ -56,7 +57,8 @@ class SphairaDownloader:
                             if path["type"] == "dir":
                                 found_ip = ip
                                 found_event.set()
-                                tqdm.write(f"\nFound valid Sphaira → {ip}")
+                                if self.debug:
+                                    tqdm.write(f"\nFound valid Sphaira → {ip}")
                                 return
                         except (aioftp.StatusCodeError, asyncio.TimeoutError):
                             pass
@@ -68,7 +70,8 @@ class SphairaDownloader:
                     pass
 
         start = time.monotonic()
-        tqdm.write(f"Scanning 192.168.{min(third_octets)}–{max(third_octets)}.x ...")
+        if self.debug:
+            tqdm.write(f"Scanning 192.168.{min(third_octets)}–{max(third_octets)}.x ...")
 
         tasks = []
         for a in third_octets:
@@ -87,15 +90,18 @@ class SphairaDownloader:
 
         if found_ip:
             self.ip_address = found_ip
-            tqdm.write(f"Discovery finished in {duration:.1f}s → using {found_ip}")
+            if self.debug:
+                tqdm.write(f"Discovery finished in {duration:.1f}s → using {found_ip}")
             return True
         else:
-            tqdm.write(f"No Sphaira found after {duration:.1f}s")
+            if self.debug:
+                tqdm.write(f"No Sphaira found after {duration:.1f}s")
             return False
 
-    async def uploadLocalGame(self, fileName="bastion.nsp", method="ftp"):
+    async def uploadLocalGame(self, fileName="bastion.nsp", method="ftp", progress_callback=None):
         if not self.ip_address:
-            tqdm.write("No IP set → running discovery first...")
+            if not progress_callback and self.debug:
+                tqdm.write("No IP set → running discovery first...")
             found = await self.discover_and_connect()
             if not found:
                 return {"error": "Could not find Sphaira on the network"}
@@ -107,14 +113,17 @@ class SphairaDownloader:
             return {"error": f"File {file_path} not found"}
 
         if method == "ftp":
-            pbar = tqdm(
-                total=file_size,
-                unit='B',
-                unit_scale=True,
-                unit_divisor=1024,
-                desc="Uploading via FTP",
-                dynamic_ncols=True,
-            )
+            # Only use tqdm if no progress callback is provided
+            pbar = None
+            if not progress_callback:
+                pbar = tqdm(
+                    total=file_size,
+                    unit='B',
+                    unit_scale=True,
+                    unit_divisor=1024,
+                    desc="Uploading via FTP",
+                    dynamic_ncols=True,
+                )
 
             async with aioftp.Client.context(
                 host=self.ip_address, port=5000, user="anon", password=""
@@ -122,14 +131,16 @@ class SphairaDownloader:
                 try:
                     path = await client.stat(self.install_folder)
                     if path["type"] != "dir":
-                        pbar.close()
+                        if pbar:
+                            pbar.close()
                         return {"error": f"{self.install_folder} exists but is not a directory"}
                 except aioftp.StatusCodeError as e:
-                    pbar.close()
+                    if pbar:
+                        pbar.close()
                     if e.code == 550:
                         return {"error": f"{self.install_folder} does not exist → is this Sphaira?"}
 
-                if self.debug:
+                if not progress_callback and self.debug:
                     tqdm.write(f"Uploading {fileName} to {self.ip_address}:{self.install_folder}")
 
                 async with client.upload_stream(
@@ -141,11 +152,17 @@ class SphairaDownloader:
                             if not chunk:
                                 break
                             await stream.write(chunk)
-                            pbar.update(len(chunk))
+                            chunk_size = len(chunk)
 
-                pbar.close()
-                tqdm.write(f"Upload complete: {fileName}")
-                return {"success": True}
+                            if pbar:
+                                pbar.update(chunk_size)
+                            elif progress_callback:
+                                await progress_callback(chunk_size)
+
+                if pbar:
+                    pbar.close()
+                    tqdm.write(f"Upload complete: {fileName}")
+                return {"success": True, "size_bytes": file_size}
 
         elif method == "mtp":
             return {"error": "MTP upload not implemented yet"}
@@ -162,6 +179,7 @@ class SphairaDownloader:
         chunk_size: int = 1024 * 512,
         connect_timeout: float = 12.0,
         read_timeout: float = 60.0,
+        progress_callback=None,
     ) -> dict:
         """
         Stream download from HTTP/HTTPS URL → stream upload directly to Sphaira
@@ -171,7 +189,8 @@ class SphairaDownloader:
             filename = url.split("/")[-1] or "downloaded_game.nsp"
 
         if not self.ip_address:
-            tqdm.write("No IP set → starting discovery...")
+            if not progress_callback and self.debug:
+                tqdm.write("No IP set → starting discovery...")
             found = await self.discover_and_connect()
             if not found:
                 return {"error": "Could not find Sphaira on the network"}
@@ -189,19 +208,22 @@ class SphairaDownloader:
                 if resp.status_code == 200 and "Content-Length" in resp.headers:
                     total_size = int(resp.headers["Content-Length"])
         except Exception as e:
-            if self.debug:
+            if not progress_callback and self.debug:
                 tqdm.write(f"HEAD request failed (size unknown): {e}")
 
-        # Prepare progress bar
-        pbar = tqdm(
-            total=total_size,
-            unit='B',
-            unit_scale=True,
-            unit_divisor=1024,
-            desc="Streaming to Sphaira",
-            dynamic_ncols=True,
-            miniters=1,
-        )
+        # Only use tqdm if no progress callback is provided
+        pbar = None
+        bytes_transferred = 0
+        if not progress_callback:
+            pbar = tqdm(
+                total=total_size,
+                unit='B',
+                unit_scale=True,
+                unit_divisor=1024,
+                desc="Streaming to Sphaira",
+                dynamic_ncols=True,
+                miniters=1,
+            )
 
         try:
             async with aioftp.Client.context(
@@ -210,10 +232,12 @@ class SphairaDownloader:
                 try:
                     st = await ftp_client.stat(self.install_folder)
                     if st["type"] != "dir":
-                        pbar.close()
+                        if pbar:
+                            pbar.close()
                         return {"error": f"{self.install_folder} exists but is not a directory"}
                 except aioftp.StatusCodeError as e:
-                    pbar.close()
+                    if pbar:
+                        pbar.close()
                     if e.code == 550:
                         return {"error": f"{self.install_folder} not found → is this Sphaira?"}
 
@@ -230,34 +254,46 @@ class SphairaDownloader:
                         ) as response:
                             response.raise_for_status()
 
-                            if self.debug:
+                            if not progress_callback and self.debug:
                                 tqdm.write(f"Streaming: {url} → {self.ip_address}:{destination}")
 
                             async for chunk in response.aiter_bytes():
                                 if not chunk:
                                     break
                                 await ftp_stream.write(chunk)
-                                pbar.update(len(chunk))
+                                chunk_size = len(chunk)
+                                bytes_transferred += chunk_size
 
-            pbar.close()
-            tqdm.write(f"Stream finished: {filename}  ({pbar.n / (1024*1024):.1f} MiB)")
+                                if pbar:
+                                    pbar.update(chunk_size)
+                                elif progress_callback:
+                                    await progress_callback(chunk_size)
+
+            if pbar:
+                pbar.close()
+                tqdm.write(f"Stream finished: {filename}  ({pbar.n / (1024*1024):.1f} MiB)")
+
             return {
                 "success": True,
-                "size_bytes": pbar.n,
+                "size_bytes": bytes_transferred if not pbar else pbar.n,
                 "filename": filename
             }
 
         except httpx.HTTPStatusError as e:
-            pbar.close()
+            if pbar:
+                pbar.close()
             return {"error": f"HTTP error {e.response.status_code}: {e}"}
         except httpx.RequestError as e:
-            pbar.close()
+            if pbar:
+                pbar.close()
             return {"error": f"HTTP request failed: {e}"}
         except aioftp.errors.AIOFTPException as e:
-            pbar.close()
+            if pbar:
+                pbar.close()
             return {"error": f"FTP error: {e}"}
         except Exception as e:
-            pbar.close()
+            if pbar:
+                pbar.close()
             return {"error": f"Unexpected: {type(e).__name__} - {e}"}
 
 
