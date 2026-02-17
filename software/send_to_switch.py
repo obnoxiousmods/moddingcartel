@@ -169,12 +169,19 @@ class SendToSwitchClient:
             return False
 
     async def process_queue(self, queue=None):
-        """Process the send queue"""
+        """
+        Process the send queue.
+
+        Args:
+            queue: Optional pre-fetched queue. If None, will fetch from server.
+                   Note: When providing a queue, ensure stats are updated separately.
+        """
         try:
             # Get queue from server if not provided
             if queue is None:
                 self.stats["status"] = "Fetching queue..."
                 queue = self.api_client.get_send_queue()
+                # Update stats when fetching queue ourselves
                 self.stats["current_queue_size"] = len(queue)
                 self.stats["last_poll_time"] = time.time()
 
