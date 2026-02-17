@@ -39,9 +39,11 @@ from app.routes.admin import (
 )
 from app.routes.api import (
     api_login,
+    clear_send_queue,
     compute_file_hashes,
     create_entry_comment,
     delete_entry,
+    delete_send_queue_item,
     download_entry,
     get_comment_vote_stats,
     get_entry_comments,
@@ -53,6 +55,7 @@ from app.routes.api import (
     send_to_switch,
     submit_report,
     update_send_queue_item,
+    update_send_queue_progress,
     vote_comment,
     vote_entry,
 )
@@ -82,6 +85,7 @@ from app.routes.mod import (
     user_submit_request,
 )
 from app.routes.pages import api_docs_page, index, search_page
+from app.routes.queue import game_queue_page, get_queue_status
 from app.routes.settings import (
     change_password,
     download_history_page,
@@ -303,6 +307,11 @@ routes = [
     Route("/api/send-to-switch", send_to_switch, methods=["POST"]),
     Route("/api/send-queue", get_send_queue, methods=["GET"]),
     Route("/api/send-queue/update", update_send_queue_item, methods=["POST"]),
+    Route("/api/send-queue/progress", update_send_queue_progress, methods=["POST"]),
+    Route("/api/send-queue/delete", delete_send_queue_item, methods=["POST"]),
+    Route("/api/send-queue/clear", clear_send_queue, methods=["POST"]),
+    Route("/api/queue/status", get_queue_status, methods=["GET"]),
+    Route("/game-queue", game_queue_page, methods=["GET"]),
     Route("/login", login_page, methods=["GET"]),
     Route("/login", login_submit, methods=["POST"]),
     Route("/register", register_page, methods=["GET"]),

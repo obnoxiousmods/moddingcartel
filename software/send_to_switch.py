@@ -184,43 +184,127 @@ class SendToSwitchClient:
             queue_item_id = item["queue_item_id"]
             entry_name = item["entry_name"]
             entry_source = item["entry_source"]
+            entry_size = item.get("entry_size", 0)
 
             logger.info(f"Processing queue item: {entry_name}")
             self.stats["status"] = f"Sending: {entry_name}"
             self.current_task = entry_name
 
-            # Mark as processing
-            self.api_client.update_queue_item(queue_item_id, "processing")
+            # Mark as processing with initial progress
+            self.api_client.update_queue_progress(
+                queue_item_id=queue_item_id,
+                status="processing",
+                progress_percent=0,
+                bytes_transferred=0,
+            )
+
+            # Setup progress tracking
+            last_progress_update = time.time()
+            progress_update_interval = 2  # Update every 2 seconds
+
+            # Create a custom progress callback
+            bytes_transferred = 0
+            last_bytes = 0
+            last_time = time.time()
+
+            async def report_progress(chunk_size: int):
+                nonlocal bytes_transferred, last_bytes, last_time, last_progress_update
+                bytes_transferred += chunk_size
+                current_time = time.time()
+
+                # Calculate transfer speed
+                time_delta = current_time - last_time
+                if time_delta > 0:
+                    transfer_speed = (bytes_transferred - last_bytes) / time_delta
+                else:
+                    transfer_speed = 0
+
+                # Calculate progress percentage
+                if entry_size > 0:
+                    progress_percent = int((bytes_transferred / entry_size) * 100)
+                else:
+                    progress_percent = 0
+
+                # Report progress every N seconds
+                if current_time - last_progress_update >= progress_update_interval:
+                    try:
+                        self.api_client.update_queue_progress(
+                            queue_item_id=queue_item_id,
+                            progress_percent=min(progress_percent, 100),
+                            bytes_transferred=bytes_transferred,
+                            transfer_speed=transfer_speed,
+                        )
+                        last_progress_update = current_time
+                    except Exception as e:
+                        logger.warning(f"Failed to update progress: {e}")
+
+                last_bytes = bytes_transferred
+                last_time = current_time
 
             # Check if file is local or HTTP
-            if entry_source.startswith("http://") or entry_source.startswith("https://"):
-                # Stream from HTTP
-                result = await self.sphaira.streamHttpGame(
-                    url=entry_source,
-                    filename=entry_name,
-                )
-            else:
-                # Upload from local file
-                result = await self.sphaira.uploadLocalGame(fileName=entry_name)
+            try:
+                if entry_source.startswith("http://") or entry_source.startswith("https://"):
+                    # Stream from HTTP with progress reporting
+                    result = await self.stream_with_progress(
+                        entry_source, entry_name, report_progress
+                    )
+                else:
+                    # Upload from local file with progress reporting
+                    result = await self.upload_with_progress(
+                        entry_name, report_progress
+                    )
 
-            # Update status based on result
-            if result.get("success"):
-                self.api_client.update_queue_item(queue_item_id, "completed")
-                self.stats["total_sent"] += 1
-                self.stats["status"] = f"✓ Completed: {entry_name}"
-                logger.info(f"Successfully sent: {entry_name}")
-            else:
-                error = result.get("error", "Unknown error")
-                self.api_client.update_queue_item(queue_item_id, "failed")
+                # Update status based on result
+                if result.get("success"):
+                    self.api_client.update_queue_progress(
+                        queue_item_id=queue_item_id,
+                        status="completed",
+                        progress_percent=100,
+                        bytes_transferred=result.get("size_bytes", bytes_transferred),
+                    )
+                    self.stats["total_sent"] += 1
+                    self.stats["status"] = f"✓ Completed: {entry_name}"
+                    logger.info(f"Successfully sent: {entry_name}")
+                else:
+                    error = result.get("error", "Unknown error")
+                    self.api_client.update_queue_progress(
+                        queue_item_id=queue_item_id,
+                        status="failed",
+                        error_message=error,
+                    )
+                    self.stats["total_failed"] += 1
+                    self.stats["status"] = f"✗ Failed: {entry_name} - {error}"
+                    logger.error(f"Failed to send {entry_name}: {error}")
+
+            except Exception as e:
+                error_msg = str(e)
+                self.api_client.update_queue_progress(
+                    queue_item_id=queue_item_id,
+                    status="failed",
+                    error_message=error_msg,
+                )
                 self.stats["total_failed"] += 1
-                self.stats["status"] = f"✗ Failed: {entry_name} - {error}"
-                logger.error(f"Failed to send {entry_name}: {error}")
+                self.stats["status"] = f"✗ Failed: {entry_name} - {error_msg}"
+                logger.error(f"Failed to send {entry_name}: {e}", exc_info=True)
 
             self.current_task = None
 
         except Exception as e:
             self.stats["status"] = f"Error processing queue: {e}"
             logger.error(f"Queue processing error: {e}", exc_info=True)
+
+    async def stream_with_progress(self, url: str, filename: str, progress_callback):
+        """Stream HTTP game with progress reporting"""
+        # For now, use the existing streamHttpGame but we'll need to modify sphaira.py later
+        # to support progress callbacks
+        result = await self.sphaira.streamHttpGame(url=url, filename=filename)
+        return result
+
+    async def upload_with_progress(self, filename: str, progress_callback):
+        """Upload local game with progress reporting"""
+        # For now, use the existing uploadLocalGame
+        result = await self.sphaira.uploadLocalGame(fileName=filename)
+        return result
 
     def generate_tui(self) -> Layout:
         """Generate the TUI layout"""

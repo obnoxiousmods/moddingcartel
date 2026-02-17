@@ -140,6 +140,67 @@ class ModdingCartel:
         except httpx.RequestError as e:
             raise Exception(f"Network error: {e}")
 
+    def update_queue_progress(
+        self,
+        queue_item_id: str,
+        progress_percent: Optional[int] = None,
+        bytes_transferred: Optional[int] = None,
+        transfer_speed: Optional[float] = None,
+        status: Optional[str] = None,
+        error_message: Optional[str] = None
+    ) -> Dict:
+        """
+        Update progress information for a queue item.
+
+        Args:
+            queue_item_id: ID of the queue item
+            progress_percent: Progress percentage (0-100)
+            bytes_transferred: Number of bytes transferred
+            transfer_speed: Transfer speed in bytes per second
+            status: Status update ('processing', 'completed', 'failed')
+            error_message: Error message if failed
+
+        Returns:
+            Dictionary with success status
+
+        Raises:
+            Exception: If not authenticated or request fails
+        """
+        if not self.api_key:
+            raise Exception("Not authenticated. Please call login() first.")
+
+        try:
+            payload = {"queue_item_id": queue_item_id}
+
+            if progress_percent is not None:
+                payload["progress_percent"] = progress_percent
+            if bytes_transferred is not None:
+                payload["bytes_transferred"] = bytes_transferred
+            if transfer_speed is not None:
+                payload["transfer_speed"] = transfer_speed
+            if status is not None:
+                payload["status"] = status
+            if error_message is not None:
+                payload["error_message"] = error_message
+
+            response = self.client.post(
+                f"{self.base_url}/api/send-queue/progress",
+                headers={"X-API-Key": self.api_key},
+                json=payload,
+            )
+
+            if response.status_code == 200:
+                data = response.json()
+                if data.get("success"):
+                    return data
+                else:
+                    raise Exception(f"Failed to update progress: {data.get('error', 'Unknown error')}")
+            else:
+                raise Exception(f"Request failed with status {response.status_code}: {response.text}")
+
+        except httpx.RequestError as e:
+            raise Exception(f"Network error: {e}")
+
     def get_entry_info(self, entry_id: str) -> Dict:
         """
         Get information about a specific entry.

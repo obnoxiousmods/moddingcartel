@@ -1135,3 +1135,138 @@ async def update_send_queue_item(request: Request):
             {"success": False, "error": "An error occurred"},
             status_code=500,
         )
+
+
+async def update_send_queue_progress(request: Request):
+    """API endpoint to update progress of a send queue item"""
+    # Require API authentication
+    if not getattr(request.state, "authenticated", False):
+        return JSONResponse(
+            {"error": "API authentication required"},
+            status_code=401,
+        )
+
+    try:
+        user_id = request.state.user_id
+        body = await request.json()
+        queue_item_id = body.get("queue_item_id")
+
+        if not queue_item_id:
+            return JSONResponse(
+                {"success": False, "error": "queue_item_id is required"},
+                status_code=400,
+            )
+
+        # Extract progress fields
+        progress_percent = body.get("progress_percent")
+        bytes_transferred = body.get("bytes_transferred")
+        transfer_speed = body.get("transfer_speed")
+        status = body.get("status")
+        error_message = body.get("error_message")
+
+        # Update queue item progress
+        success = await db.update_send_queue_progress(
+            user_id=user_id,
+            queue_item_id=queue_item_id,
+            progress_percent=progress_percent,
+            bytes_transferred=bytes_transferred,
+            transfer_speed=transfer_speed,
+            status=status,
+            error_message=error_message,
+        )
+
+        if success:
+            return JSONResponse({
+                "success": True,
+                "message": "Progress updated",
+            })
+        else:
+            return JSONResponse(
+                {"success": False, "error": "Failed to update progress"},
+                status_code=500,
+            )
+
+    except Exception as e:
+        logger.error(f"Update send queue progress error: {e}", exc_info=True)
+        return JSONResponse(
+            {"success": False, "error": "An error occurred"},
+            status_code=500,
+        )
+
+
+async def delete_send_queue_item(request: Request):
+    """API endpoint to delete a queue item"""
+    # Require session authentication
+    if not request.session.get("user_id"):
+        return JSONResponse(
+            {"error": "Authentication required"},
+            status_code=401,
+        )
+
+    try:
+        user_id = request.session.get("user_id")
+        body = await request.json()
+        queue_item_id = body.get("queue_item_id")
+
+        if not queue_item_id:
+            return JSONResponse(
+                {"success": False, "error": "queue_item_id is required"},
+                status_code=400,
+            )
+
+        # Delete queue item
+        success = await db.delete_send_queue_item(user_id, queue_item_id)
+
+        if success:
+            logger.info(f"Deleted queue item {queue_item_id} for user {user_id}")
+            return JSONResponse({
+                "success": True,
+                "message": "Queue item deleted",
+            })
+        else:
+            return JSONResponse(
+                {"success": False, "error": "Failed to delete queue item"},
+                status_code=500,
+            )
+
+    except Exception as e:
+        logger.error(f"Delete send queue item error: {e}", exc_info=True)
+        return JSONResponse(
+            {"success": False, "error": "An error occurred"},
+            status_code=500,
+        )
+
+
+async def clear_send_queue(request: Request):
+    """API endpoint to clear all queue items"""
+    # Require session authentication
+    if not request.session.get("user_id"):
+        return JSONResponse(
+            {"error": "Authentication required"},
+            status_code=401,
+        )
+
+    try:
+        user_id = request.session.get("user_id")
+
+        # Clear queue
+        success = await db.clear_send_queue(user_id)
+
+        if success:
+            logger.info(f"Cleared send queue for user {user_id}")
+            return JSONResponse({
+                "success": True,
+                "message": "Queue cleared",
+            })
+        else:
+            return JSONResponse(
+                {"success": False, "error": "Failed to clear queue"},
+                status_code=500,
+            )
+
+    except Exception as e:
+        logger.error(f"Clear send queue error: {e}", exc_info=True)
+        return JSONResponse(
+            {"success": False, "error": "An error occurred"},
+            status_code=500,
+        )

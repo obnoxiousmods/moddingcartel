@@ -1,0 +1,523 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container">
+    <div class="page-header">
+        <h2 class="page-title">📤 Game Queue</h2>
+        <p class="page-subtitle">Manage games queued to be sent to your Nintendo Switch</p>
+    </div>
+
+    <!-- Queue Controls -->
+    <div class="queue-controls">
+        <button id="refresh-queue" class="btn btn-refresh">
+            🔄 Refresh
+        </button>
+        <button id="clear-all-queue" class="btn btn-danger">
+            🗑️ Clear All
+        </button>
+    </div>
+
+    <!-- Queue Status -->
+    <div class="queue-stats">
+        <div class="stat-item">
+            <span class="stat-label">Pending:</span>
+            <span class="stat-value" id="pending-count">0</span>
+        </div>
+        <div class="stat-item">
+            <span class="stat-label">Processing:</span>
+            <span class="stat-value" id="processing-count">0</span>
+        </div>
+        <div class="stat-item">
+            <span class="stat-label">Completed:</span>
+            <span class="stat-value" id="completed-count">0</span>
+        </div>
+        <div class="stat-item">
+            <span class="stat-label">Failed:</span>
+            <span class="stat-value" id="failed-count">0</span>
+        </div>
+    </div>
+
+    <!-- Queue Items -->
+    <div id="queue-container" class="queue-container">
+        {% if queue_items %}
+            {% for item in queue_items %}
+            <div class="queue-item" data-item-id="{{ item.queue_item_id }}" data-status="{{ item.status }}">
+                <div class="queue-item-header">
+                    <div class="queue-item-info">
+                        <h3 class="queue-item-title">{{ item.entry_name.replace('_', ' ') }}</h3>
+                        <div class="queue-item-meta">
+                            <span class="meta-item">
+                                {% if item.entry_size %}
+                                    📦 {{ (item.entry_size / 1024 / 1024 / 1024) | round(2) }} GB
+                                {% else %}
+                                    📦 Size unknown
+                                {% endif %}
+                            </span>
+                            <span class="meta-item">
+                                🕒 Added {{ item.created_at[:19] }}
+                            </span>
+                        </div>
+                    </div>
+                    <div class="queue-item-status">
+                        <span class="status-badge status-{{ item.status }}">
+                            {% if item.status == 'pending' %}⏳ Pending
+                            {% elif item.status == 'processing' %}🔄 Processing
+                            {% elif item.status == 'completed' %}✅ Completed
+                            {% elif item.status == 'failed' %}❌ Failed
+                            {% endif %}
+                        </span>
+                    </div>
+                </div>
+
+                <!-- Progress Bar (for processing items) -->
+                {% if item.status == 'processing' %}
+                <div class="queue-item-progress">
+                    <div class="progress-bar-container">
+                        <div class="progress-bar" style="width: {{ item.progress_percent or 0 }}%"></div>
+                    </div>
+                    <div class="progress-info">
+                        <span class="progress-percent">{{ item.progress_percent or 0 }}%</span>
+                        {% if item.transfer_speed %}
+                            <span class="progress-speed">{{ (item.transfer_speed / 1024 / 1024) | round(2) }} MB/s</span>
+                        {% endif %}
+                        {% if item.bytes_transferred and item.entry_size %}
+                            <span class="progress-bytes">
+                                {{ (item.bytes_transferred / 1024 / 1024 / 1024) | round(2) }} / {{ (item.entry_size / 1024 / 1024 / 1024) | round(2) }} GB
+                            </span>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endif %}
+
+                <!-- Error Message (for failed items) -->
+                {% if item.status == 'failed' and item.error_message %}
+                <div class="queue-item-error">
+                    <span class="error-icon">⚠️</span>
+                    <span class="error-message">{{ item.error_message }}</span>
+                </div>
+                {% endif %}
+
+                <!-- Actions -->
+                <div class="queue-item-actions">
+                    {% if item.status in ['pending', 'failed'] %}
+                    <button class="btn btn-sm btn-delete" onclick="deleteQueueItem('{{ item.queue_item_id }}')">
+                        🗑️ Remove
+                    </button>
+                    {% endif %}
+                </div>
+            </div>
+            {% endfor %}
+        {% else %}
+            <div class="empty-state">
+                <div class="empty-icon">📭</div>
+                <h3>Your queue is empty</h3>
+                <p>Games you add to "Send to Switch" will appear here</p>
+                <a href="/search" class="btn btn-primary">Browse Games</a>
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+<style>
+.page-header {
+    margin-bottom: 2rem;
+}
+
+.page-title {
+    font-size: 2rem;
+    font-weight: bold;
+    color: var(--text-primary);
+    margin-bottom: 0.5rem;
+}
+
+.page-subtitle {
+    color: var(--text-secondary);
+    font-size: 1rem;
+}
+
+.queue-controls {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.btn {
+    padding: 0.75rem 1.5rem;
+    border: none;
+    border-radius: 6px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.btn-refresh {
+    background: var(--primary-color);
+    color: white;
+}
+
+.btn-refresh:hover {
+    background: var(--primary-hover);
+}
+
+.btn-danger {
+    background: rgba(239, 68, 68, 0.1);
+    color: #ef4444;
+    border: 1px solid rgba(239, 68, 68, 0.3);
+}
+
+.btn-danger:hover {
+    background: rgba(239, 68, 68, 0.2);
+}
+
+.queue-stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 1rem;
+    margin-bottom: 2rem;
+}
+
+.stat-item {
+    background: var(--surface);
+    padding: 1rem;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+}
+
+.stat-label {
+    color: var(--text-secondary);
+    font-size: 0.875rem;
+    display: block;
+    margin-bottom: 0.25rem;
+}
+
+.stat-value {
+    color: var(--text-primary);
+    font-size: 1.5rem;
+    font-weight: bold;
+}
+
+.queue-container {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.queue-item {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 1.5rem;
+    transition: all 0.2s;
+}
+
+.queue-item:hover {
+    border-color: var(--primary-color);
+}
+
+.queue-item-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 1rem;
+}
+
+.queue-item-title {
+    font-size: 1.125rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 0.5rem;
+}
+
+.queue-item-meta {
+    display: flex;
+    gap: 1rem;
+    flex-wrap: wrap;
+}
+
+.meta-item {
+    color: var(--text-secondary);
+    font-size: 0.875rem;
+}
+
+.status-badge {
+    padding: 0.5rem 1rem;
+    border-radius: 6px;
+    font-size: 0.875rem;
+    font-weight: 600;
+}
+
+.status-pending {
+    background: rgba(249, 115, 22, 0.1);
+    color: #f97316;
+}
+
+.status-processing {
+    background: rgba(59, 130, 246, 0.1);
+    color: #3b82f6;
+}
+
+.status-completed {
+    background: rgba(34, 197, 94, 0.1);
+    color: #22c55e;
+}
+
+.status-failed {
+    background: rgba(239, 68, 68, 0.1);
+    color: #ef4444;
+}
+
+.queue-item-progress {
+    margin-bottom: 1rem;
+}
+
+.progress-bar-container {
+    width: 100%;
+    height: 24px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    overflow: hidden;
+    margin-bottom: 0.5rem;
+}
+
+.progress-bar {
+    height: 100%;
+    background: linear-gradient(90deg, var(--primary-color), var(--primary-hover));
+    transition: width 0.3s;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    padding-right: 0.5rem;
+}
+
+.progress-info {
+    display: flex;
+    gap: 1rem;
+    font-size: 0.875rem;
+    color: var(--text-secondary);
+}
+
+.progress-percent {
+    font-weight: 600;
+    color: var(--primary-color);
+}
+
+.queue-item-error {
+    background: rgba(239, 68, 68, 0.1);
+    border: 1px solid rgba(239, 68, 68, 0.3);
+    border-radius: 6px;
+    padding: 0.75rem;
+    margin-bottom: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.error-icon {
+    font-size: 1.25rem;
+}
+
+.error-message {
+    color: #ef4444;
+    font-size: 0.875rem;
+}
+
+.queue-item-actions {
+    display: flex;
+    gap: 0.5rem;
+    justify-content: flex-end;
+}
+
+.btn-sm {
+    padding: 0.5rem 1rem;
+    font-size: 0.875rem;
+}
+
+.btn-delete {
+    background: rgba(239, 68, 68, 0.1);
+    color: #ef4444;
+    border: 1px solid rgba(239, 68, 68, 0.3);
+}
+
+.btn-delete:hover {
+    background: rgba(239, 68, 68, 0.2);
+}
+
+.empty-state {
+    text-align: center;
+    padding: 4rem 2rem;
+}
+
+.empty-icon {
+    font-size: 4rem;
+    margin-bottom: 1rem;
+}
+
+.empty-state h3 {
+    font-size: 1.5rem;
+    color: var(--text-primary);
+    margin-bottom: 0.5rem;
+}
+
+.empty-state p {
+    color: var(--text-secondary);
+    margin-bottom: 1.5rem;
+}
+
+.btn-primary {
+    background: var(--primary-color);
+    color: white;
+}
+
+.btn-primary:hover {
+    background: var(--primary-hover);
+}
+</style>
+
+<script>
+// Auto-refresh queue status every 3 seconds
+let autoRefreshInterval = null;
+
+async function refreshQueue() {
+    try {
+        const response = await fetch('/api/queue/status');
+        const data = await response.json();
+        
+        if (data.success) {
+            updateQueueDisplay(data.queue);
+        }
+    } catch (error) {
+        console.error('Error refreshing queue:', error);
+    }
+}
+
+function updateQueueDisplay(queueItems) {
+    // Update counts
+    const pending = queueItems.filter(item => item.status === 'pending').length;
+    const processing = queueItems.filter(item => item.status === 'processing').length;
+    
+    document.getElementById('processing-count').textContent = processing;
+    
+    // Update progress for processing items
+    queueItems.forEach(item => {
+        if (item.status === 'processing') {
+            const element = document.querySelector(`[data-item-id="${item.queue_item_id}"]`);
+            if (element) {
+                const progressBar = element.querySelector('.progress-bar');
+                const progressPercent = element.querySelector('.progress-percent');
+                const progressSpeed = element.querySelector('.progress-speed');
+                const progressBytes = element.querySelector('.progress-bytes');
+                
+                if (progressBar && item.progress_percent !== null) {
+                    progressBar.style.width = item.progress_percent + '%';
+                }
+                if (progressPercent && item.progress_percent !== null) {
+                    progressPercent.textContent = item.progress_percent + '%';
+                }
+                if (progressSpeed && item.transfer_speed !== null) {
+                    progressSpeed.textContent = (item.transfer_speed / 1024 / 1024).toFixed(2) + ' MB/s';
+                }
+                if (progressBytes && item.bytes_transferred !== null && item.entry_size !== null) {
+                    const transferred = (item.bytes_transferred / 1024 / 1024 / 1024).toFixed(2);
+                    const total = (item.entry_size / 1024 / 1024 / 1024).toFixed(2);
+                    progressBytes.textContent = `${transferred} / ${total} GB`;
+                }
+            }
+        }
+    });
+}
+
+async function deleteQueueItem(itemId) {
+    if (!confirm('Are you sure you want to remove this item from the queue?')) {
+        return;
+    }
+    
+    try {
+        const response = await fetch('/api/send-queue/delete', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ queue_item_id: itemId })
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            // Remove item from display
+            const element = document.querySelector(`[data-item-id="${itemId}"]`);
+            if (element) {
+                element.remove();
+            }
+            
+            // Check if queue is empty
+            const remaining = document.querySelectorAll('.queue-item').length;
+            if (remaining === 0) {
+                location.reload();
+            }
+        } else {
+            alert('Failed to delete item: ' + (data.error || 'Unknown error'));
+        }
+    } catch (error) {
+        console.error('Error deleting queue item:', error);
+        alert('Error deleting item. Please try again.');
+    }
+}
+
+async function clearAllQueue() {
+    if (!confirm('Are you sure you want to clear ALL items from your queue? This cannot be undone.')) {
+        return;
+    }
+    
+    try {
+        const response = await fetch('/api/send-queue/clear', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            location.reload();
+        } else {
+            alert('Failed to clear queue: ' + (data.error || 'Unknown error'));
+        }
+    } catch (error) {
+        console.error('Error clearing queue:', error);
+        alert('Error clearing queue. Please try again.');
+    }
+}
+
+// Event listeners
+document.getElementById('refresh-queue').addEventListener('click', () => {
+    location.reload();
+});
+
+document.getElementById('clear-all-queue').addEventListener('click', clearAllQueue);
+
+// Start auto-refresh
+autoRefreshInterval = setInterval(refreshQueue, 3000);
+
+// Update counts on page load
+function updateCounts() {
+    const items = document.querySelectorAll('.queue-item');
+    let pending = 0, processing = 0, completed = 0, failed = 0;
+    
+    items.forEach(item => {
+        const status = item.dataset.status;
+        if (status === 'pending') pending++;
+        else if (status === 'processing') processing++;
+        else if (status === 'completed') completed++;
+        else if (status === 'failed') failed++;
+    });
+    
+    document.getElementById('pending-count').textContent = pending;
+    document.getElementById('processing-count').textContent = processing;
+    document.getElementById('completed-count').textContent = completed;
+    document.getElementById('failed-count').textContent = failed;
+}
+
+updateCounts();
+</script>
+{% endblock %}
