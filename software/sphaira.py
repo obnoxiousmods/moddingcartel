@@ -385,6 +385,7 @@ class SphairaDownloader:
 
         pbar = None
         start_time = time.time()
+        loop = asyncio.get_event_loop()
 
         if not progress_callback:
             pbar = tqdm(
