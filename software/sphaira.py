@@ -52,6 +52,38 @@ class SphairaDownloader:
             f"SphairaDownloader initialized - IP: {ip_address}, Install folder: {install_folder}, Debug: {debug}"
         )
 
+    async def verify_ip_connection(self, ip_address: str, port=5000, timeout=2.0) -> bool:
+        """
+        Verify if a specific IP address is still reachable and has Sphaira running.
+        
+        Args:
+            ip_address: The IP address to verify
+            port: FTP port (default 5000)
+            timeout: Connection timeout in seconds
+            
+        Returns:
+            True if the IP is reachable and has Sphaira, False otherwise
+        """
+        self.logger.info(f"Verifying connection to {ip_address}:{port}...")
+        
+        try:
+            async with aioftp.Client.context(
+                host=ip_address, port=port, user="anon", password=""
+            ) as client:
+                try:
+                    path = await asyncio.wait_for(
+                        client.stat(self.install_folder), timeout=timeout
+                    )
+                    if path["type"] == "dir":
+                        self.logger.info(f"✓ Connection to {ip_address} verified")
+                        return True
+                except (aioftp.StatusCodeError, asyncio.TimeoutError):
+                    self.logger.warning(f"✗ Invalid Sphaira path at {ip_address}")
+                    return False
+        except (asyncio.TimeoutError, OSError, ConnectionRefusedError) as e:
+            self.logger.warning(f"✗ Cannot connect to {ip_address}: {e}")
+            return False
+
     async def detect_usb_switch(self) -> bool:
         """
         Detect Nintendo Switch connected via USB using Sphaira protocol.
@@ -100,31 +132,32 @@ class SphairaDownloader:
         self.logger.info(f"USB detection result: {result}")
         return result
 
-    async def discover_and_connect(
+    async def _scan_ip_range(
         self,
-        third_octets=range(0, 16),
-        fourth_octets=range(1, 255),
+        ip_prefix: str,
+        third_octets,
+        fourth_octets,
         port=5000,
         max_concurrent=350,
         connect_timeout=0.20,
         stat_timeout=1.5,
-    ) -> bool:
+    ) -> Optional[str]:
         """
-        Fast concurrent scan for Sphaira → sets self.ip_address when found
-        Returns True if found and verified, False otherwise
+        Scan a specific IP range for Sphaira.
+        Returns the IP address if found, None otherwise.
+        
+        Args:
+            ip_prefix: The first two octets of the IP (e.g., "192.168" or "10.0")
+            third_octets: Range of third octet values to scan
+            fourth_octets: Range of fourth octet values to scan
         """
         self.logger.info(
-            f"Starting network discovery - Port: {port}, Max concurrent: {max_concurrent}"
+            f"Scanning {ip_prefix}.{min(third_octets)}-{max(third_octets)}.{min(fourth_octets)}-{max(fourth_octets)}"
         )
-        self.logger.info(
-            f"Scan range: 192.168.{min(third_octets)}-{max(third_octets)}.{min(fourth_octets)}-{max(fourth_octets)}"
-        )
-
-        if self.ip_address:
-            self.logger.info(f"Already have IP: {self.ip_address} — skipping discovery")
-            if self.debug:
-                tqdm.write(f"Already have IP: {self.ip_address} — skipping discovery")
-            return True
+        if self.debug:
+            tqdm.write(
+                f"Scanning {ip_prefix}.{min(third_octets)}–{max(third_octets)}.x ..."
+            )
 
         semaphore = asyncio.Semaphore(max_concurrent)
         found_event = asyncio.Event()
@@ -167,17 +200,12 @@ class SphairaDownloader:
                     pass
 
         start = time.monotonic()
-        if self.debug:
-            tqdm.write(
-                f"Scanning 192.168.{min(third_octets)}–{max(third_octets)}.x ..."
-            )
-
         tasks = []
         for a in third_octets:
             for b in fourth_octets:
                 if found_event.is_set():
                     break
-                ip = f"192.168.{a}.{b}"
+                ip = f"{ip_prefix}.{a}.{b}"
                 tasks.append(asyncio.create_task(probe(ip)))
 
         done, pending = await asyncio.wait(tasks, return_when=asyncio.FIRST_COMPLETED)
@@ -188,19 +216,62 @@ class SphairaDownloader:
         duration = time.monotonic() - start
 
         if found_ip:
-            self.ip_address = found_ip
             self.logger.info(
                 f"Discovery successful - Found {found_ip} in {duration:.1f}s after {probes_attempted} probes"
             )
             if self.debug:
                 tqdm.write(f"Discovery finished in {duration:.1f}s → using {found_ip}")
-            return True
+            return found_ip
         else:
             self.logger.warning(
-                f"No Sphaira found after {duration:.1f}s ({probes_attempted} probes attempted)"
+                f"No Sphaira found in {ip_prefix}.x after {duration:.1f}s ({probes_attempted} probes attempted)"
             )
             if self.debug:
-                tqdm.write(f"No Sphaira found after {duration:.1f}s")
+                tqdm.write(f"No Sphaira found in {ip_prefix}.x after {duration:.1f}s")
+            return None
+
+    async def discover_and_connect(
+        self,
+        third_octets=range(0, 16),
+        fourth_octets=range(1, 255),
+        port=5000,
+        max_concurrent=350,
+        connect_timeout=0.20,
+        stat_timeout=1.5,
+    ) -> bool:
+        """
+        Fast concurrent scan for Sphaira → sets self.ip_address when found
+        Scans 192.168.*.* first, then 10.0.*.* if not found
+        Returns True if found and verified, False otherwise
+        """
+        self.logger.info(
+            f"Starting network discovery - Port: {port}, Max concurrent: {max_concurrent}"
+        )
+
+        if self.ip_address:
+            self.logger.info(f"Already have IP: {self.ip_address} — skipping discovery")
+            if self.debug:
+                tqdm.write(f"Already have IP: {self.ip_address} — skipping discovery")
+            return True
+
+        # Try 192.168.*.* first
+        found_ip = await self._scan_ip_range(
+            "192.168", third_octets, fourth_octets, port, max_concurrent, connect_timeout, stat_timeout
+        )
+        
+        # If not found, try 10.0.*.* range
+        if not found_ip:
+            self.logger.info("Switch not found in 192.168.*.*, trying 10.0.*.*...")
+            if self.debug:
+                tqdm.write("Switch not found in 192.168.*.*, trying 10.0.*.*...")
+            found_ip = await self._scan_ip_range(
+                "10.0", third_octets, fourth_octets, port, max_concurrent, connect_timeout, stat_timeout
+            )
+
+        if found_ip:
+            self.ip_address = found_ip
+            return True
+        else:
             return False
 
     def _send_file_info_result(self, file_size: int, flags: int):

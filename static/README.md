@@ -20,16 +20,19 @@ If you dont know how to use game mode, you open a game while holding R on the ri
 If it opened hbmenu, open sphaira. If sphaira isnt there you didnt put the files onto your microsd properly.
 You can open hbmenu and then sphaira by pressing the Album button at the bottom, in Sphaira u can replace hbmenu entirely (Recommended)
 6. Enable USBC & FTP install (Navigate Sphaira menus, Y -> Menu -> FTP Install -> Enable -> FTP Install again, or same thing with USBC install)
-7. Ensure Sphaira is ready to receive files and youre install the USB or FTP install menu
-8. Run moddingcartel.exe, this will ask you sign in
+7. Ensure Sphaira is ready to receive files and youre in the USB or FTP install menu
+8. Run moddingcartel.exe, this will ask you to sign in
 9. Signup on moddingcartel.com (just user+pass, no email or sms etc, free)
 10. Sign in using those details (just press enter when it asks for website/hostname)
-11. If its ready, start sending games to your switch via moddingcartel.com
+11. When prompted for Switch IP, enter it manually OR press Enter to auto-scan (scans 192.168.*.* and 10.0.*.* ranges)
+12. If ready, start sending games to your switch via moddingcartel.com
 
 OPTIONAL+READ EXTRA:
-11. It'll autogenerate a config.yaml in your C:\Users\(yourAccount)\.config\
-12. If it says " Ready! Start adding games to the queue... " either USBC or FTP mode was detected to be working properly
-13. If it crashes neither one is working properly, ensure you have drivers installed & ensure PC + Switch on same network
-14. You can manually change the switch IP Address in the config.yaml if needed (It automatically bruteforces 192.168.*.* and 10.0.*.*)
-15. There is a log file located in the same directory as moddingcartel.exe you can view it to debug problems
+13. Config file (config.yaml) and log files are now stored in the same directory as moddingcartel.exe
+14. The app will verify your Switch IP on launch - if it's unreachable, it will automatically rescan
+15. If it says " Ready! Start adding games to the queue... " either USB or FTP mode was detected to be working properly
+16. If it crashes neither one is working properly, ensure you have drivers installed & ensure PC + Switch on same network
+17. You can manually change the switch IP Address in the config.yaml if needed (It automatically scans 192.168.*.* and 10.0.*.* ranges)
+18. The log file (send_to_switch.log) is located in the same directory as moddingcartel.exe - you can view it to debug problems
+19. When built as an exe, the window will stay open on error so you can read the error message - press Enter to close
 ```
