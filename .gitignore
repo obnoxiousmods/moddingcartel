@@ -4,6 +4,8 @@ __pycache__/
 *$py.class
 *.zip
 static/cartelpack.zip
+config.yaml
+
 # C extensions
 *.so
 
