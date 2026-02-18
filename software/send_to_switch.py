@@ -105,7 +105,7 @@ class SendToSwitchClient:
         if "api_key" in self.config:
             logger.info("Using existing API key")
             self.api_client = ModdingCartel(
-                base_url=self.config.get("base_url", "https://moddingcartel.com"),
+                base_url=self.config.get("base_url", "https://swdld.obnoxious.lol"),
                 api_key=self.config["api_key"],
             )
             return True
@@ -126,9 +126,9 @@ class SendToSwitchClient:
         # Get base URL
         base_url = (
             self.console.input(
-                "[yellow]Server URL:[/yellow] [dim](default: https://moddingcartel.com)[/dim] "
+                    "[yellow]Server URL:[/yellow] [dim](default: https://swdld.obnoxious.lol)[/dim] "
             ).strip()
-            or "https://moddingcartel.com"
+            or "https://swdld.obnoxious.lol"
         )
 
         try:
