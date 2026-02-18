@@ -20,7 +20,7 @@ If you dont know how to use game mode, you open a game while holding R on the ri
 If it opened hbmenu, open sphaira. If sphaira isnt there you didnt put the files onto your microsd properly.
 You can open hbmenu and then sphaira by pressing the Album button at the bottom, in Sphaira u can replace hbmenu entirely (Recommended)
 6. Enable USBC & FTP install (Navigate Sphaira menus, Y -> Menu -> FTP Install -> Enable -> FTP Install again, or same thing with USBC install)
-7. Ensure Sphaira is ready to receive files and youre in the USB or FTP install menu
+7. Ensure Sphaira is ready to receive files and you're in the USB or FTP install menu
 8. Run moddingcartel.exe, this will ask you to sign in
 9. Signup on moddingcartel.com (just user+pass, no email or sms etc, free)
 10. Sign in using those details (just press enter when it asks for website/hostname)

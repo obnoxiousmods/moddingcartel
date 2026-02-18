@@ -90,9 +90,9 @@ class SendToSwitchClient:
             return False
 
     def save_config(self):
-        """Save configuration to YAML file"""
+        """Save configuration to YAML file in working directory"""
         try:
-            # Config is in working directory, no need to create parent dirs
+            # WORKING_DIR exists (derived from executable/script location)
             with open(self.config_path, "w") as f:
                 yaml.dump(self.config, f, default_flow_style=False)
             logger.info(f"Configuration saved to {self.config_path}")

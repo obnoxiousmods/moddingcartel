@@ -156,7 +156,7 @@ class SphairaDownloader:
         )
         if self.debug:
             tqdm.write(
-                f"Scanning {ip_prefix}.{min(third_octets)}–{max(third_octets)}.x ..."
+                f"Scanning {ip_prefix}.{min(third_octets)}-{max(third_octets)}.x ..."
             )
 
         semaphore = asyncio.Semaphore(max_concurrent)
