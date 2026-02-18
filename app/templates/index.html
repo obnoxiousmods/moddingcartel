@@ -81,8 +81,9 @@
                 <h2 class="send-to-switch-title">Send to Switch - Direct Installation Software</h2>
             </div>
             <p class="send-to-switch-description">
+                <strong>moddingcartel.exe</strong> is our USB & FTP client that automatically sends games from the website directly to your Switch - no manual downloads needed!
                 Install games directly to your Nintendo Switch via <strong>FTP or USB</strong> using our automated installation client. 
-                No manual downloads needed - queue games from the website and they're automatically sent to your Switch!
+                Queue games from the website and they're automatically sent to your Switch!
             </p>
             <div class="send-to-switch-features">
                 <div class="feature-item">
@@ -98,39 +99,159 @@
                     <span class="feature-text">USB & FTP support</span>
                 </div>
             </div>
+            
             <div class="send-to-switch-setup">
-                <h3 class="setup-title">Quick Setup Guide</h3>
+                <h3 class="setup-title">📦 What's in CartelPack?</h3>
+                <p style="margin-bottom: 15px; color: #555;">The CartelPack includes everything you need:</p>
+                <ul style="margin-bottom: 20px; color: #555;">
+                    <li><code>moddingcartel.exe</code> - USB & FTP extension for sending games to your Switch</li>
+                    <li><code>nsusbloader_installer.exe</code> - NS USBLoader installer</li>
+                    <li><code>nswdrivers.exe</code> - Nintendo Switch USB drivers installer</li>
+                    <li><code>switch/sphaira</code> - Sphaira homebrew (installer + launcher + FTP)</li>
+                    <li><code>switch/tinwoo</code> - TinWoo installer (HTTP + USB + Network support)</li>
+                </ul>
+            </div>
+            
+            <div class="send-to-switch-setup">
+                <h3 class="setup-title">🚀 Complete Setup Guide</h3>
                 <div class="setup-steps">
                     <div class="setup-step">
                         <span class="step-number">1</span>
                         <div class="step-content">
-                            <strong>Download the Client</strong>
-                            <p>Get <a href="/static/cartelpack/cartelpack.zip" download>cartelpack.zip</a> which includes moddingcartel.exe, drivers, and Switch installers</p>
+                            <strong>Download CartelPack</strong>
+                            <p>Get <a href="/static/cartelpack/cartelpack.zip" download>cartelpack.zip</a> from below and extract it to a folder on your PC</p>
                         </div>
                     </div>
                     <div class="setup-step">
                         <span class="step-number">2</span>
                         <div class="step-content">
-                            <strong>Setup Sphaira on Switch</strong>
-                            <p>Extract <a href="https://github.com/ITotalJustice/Sphaira" target="_blank" rel="noopener noreferrer">Sphaira</a> to your microSD card's <code>/switch/</code> folder</p>
+                            <strong>Install USB Drivers</strong>
+                            <p>Run <code>cartelpack/nswdrivers.exe</code> and follow the installer. <em>May require reboot for USB method to work</em></p>
                         </div>
                     </div>
                     <div class="setup-step">
                         <span class="step-number">3</span>
                         <div class="step-content">
-                            <strong>Launch & Configure</strong>
-                            <p>Run the client, sign in via TUI, and ensure Sphaira is in <strong>FTP or USB file transfer mode</strong></p>
+                            <strong>Connect Switch to Network</strong>
+                            <p>Connect your Nintendo Switch to the same network as your PC (Ethernet or WiFi both work). If using FTP method, no reboot needed!</p>
                         </div>
                     </div>
                     <div class="setup-step">
                         <span class="step-number">4</span>
                         <div class="step-content">
-                            <strong>Start Installing!</strong>
-                            <p>Add games to your queue from the website - they'll automatically install to your Switch</p>
+                            <strong>Prepare SD Card</strong>
+                            <ul style="margin-top: 8px;">
+                                <li>Boot into Hekate and mount SD card to PC, OR</li>
+                                <li>Turn off Switch, remove microSD, and use a microSD reader (USB adapter or phone)</li>
+                                <li><strong>Important:</strong> You must have <a href="https://files.obnoxious.lol/switch" target="_blank" rel="noopener noreferrer">SuperZip OR HATS pack</a> already installed on your Switch!</li>
+                            </ul>
+                        </div>
+                    </div>
+                    <div class="setup-step">
+                        <span class="step-number">5</span>
+                        <div class="step-content">
+                            <strong>Install Switch Software</strong>
+                            <p>Copy the contents of <code>cartelpack/switch/</code> folder (sphaira and tinwoo folders) to your microSD card's <code>/switch/</code> directory</p>
+                        </div>
+                    </div>
+                    <div class="setup-step">
+                        <span class="step-number">6</span>
+                        <div class="step-content">
+                            <strong>Boot Your Switch</strong>
+                            <p>Eject the SD card safely, put it back in your Switch, and boot into CFW (Atmosphere)</p>
+                        </div>
+                    </div>
+                    <div class="setup-step">
+                        <span class="step-number">7</span>
+                        <div class="step-content">
+                            <strong>Open Sphaira</strong>
+                            <ul style="margin-top: 8px;">
+                                <li>Launch any game while holding R button on the right joycon to open hbmenu</li>
+                                <li>If hbmenu appears, find and launch Sphaira from the menu</li>
+                                <li>Alternatively, press Album button to access homebrew launcher, then open Sphaira</li>
+                                <li><em>Tip:</em> Applet mode works fine for installing smaller games. For larger games, use "Game Mode" (hold R while launching a game)</li>
+                                <li><em>Optional:</em> In Sphaira settings, you can replace hbmenu entirely (recommended for ease of use)</li>
+                            </ul>
+                        </div>
+                    </div>
+                    <div class="setup-step">
+                        <span class="step-number">8</span>
+                        <div class="step-content">
+                            <strong>Enable Transfer Methods in Sphaira</strong>
+                            <ul style="margin-top: 8px;">
+                                <li>In Sphaira, press <strong>Y</strong> → <strong>Menu</strong> → <strong>FTP Install</strong> → <strong>Enable</strong></li>
+                                <li>Do the same for <strong>USB Install</strong> (Y → Menu → USB Install → Enable)</li>
+                                <li>Navigate to the FTP Install or USB Install menu and keep Sphaira ready to receive files</li>
+                            </ul>
+                        </div>
+                    </div>
+                    <div class="setup-step">
+                        <span class="step-number">9</span>
+                        <div class="step-content">
+                            <strong>Run moddingcartel.exe</strong>
+                            <ul style="margin-top: 8px;">
+                                <li>Launch <code>cartelpack/moddingcartel.exe</code> from your PC</li>
+                                <li>The program will prompt you to sign in with your ModdingCartel account</li>
+                                <li>If you don't have an account, sign up at <a href="https://moddingcartel.com">moddingcartel.com</a> (just username + password, no email/SMS required, free!)</li>
+                                <li>When asked for website/hostname, just press Enter (uses default)</li>
+                            </ul>
+                        </div>
+                    </div>
+                    <div class="setup-step">
+                        <span class="step-number">10</span>
+                        <div class="step-content">
+                            <strong>Configure Switch IP Address</strong>
+                            <ul style="margin-top: 8px;">
+                                <li>When prompted for Switch IP, you can manually enter it, OR</li>
+                                <li>Press Enter to auto-scan (automatically scans 192.168.*.* and 10.0.*.* ranges)</li>
+                                <li>The app verifies the IP on launch - if unreachable, it will rescan automatically</li>
+                                <li>Find your Switch's IP: In Sphaira or Switch System Settings → Internet → Connection Status</li>
+                            </ul>
+                        </div>
+                    </div>
+                    <div class="setup-step">
+                        <span class="step-number">11</span>
+                        <div class="step-content">
+                            <strong>Start Installing Games!</strong>
+                            <ul style="margin-top: 8px;">
+                                <li>If successful, you'll see "Ready! Start adding games to the queue..."</li>
+                                <li>Go to <a href="https://moddingcartel.com/search">moddingcartel.com</a> and add games to your queue</li>
+                                <li>moddingcartel.exe will automatically download and send them to your Switch!</li>
+                                <li>Games install directly to your Switch - no manual file transfers needed</li>
+                            </ul>
                         </div>
                     </div>
                 </div>
             </div>
+            
+            <div class="send-to-switch-setup">
+                <h3 class="setup-title">💡 Tips & Troubleshooting</h3>
+                <div class="card-note">
+                    <strong>Configuration Files:</strong> Config file (<code>config.yaml</code>) and log file (<code>send_to_switch.log</code>) are stored in the same directory as moddingcartel.exe. Check the log file if you encounter problems.
+                </div>
+                <div class="card-note">
+                    <strong>Manual IP Configuration:</strong> You can manually edit the Switch IP address in <code>config.yaml</code> if needed. The auto-scanner searches 192.168.*.* and 10.0.*.* network ranges.
+                </div>
+                <div class="card-note">
+                    <strong>Transfer Speed:</strong> USB transfers are significantly faster than FTP! The client automatically detects and prioritizes USB when both are available.
+                </div>
+                <div class="card-note">
+                    <strong>Error Handling:</strong> If the program crashes, neither USB nor FTP is working properly. Ensure:
+                    <ul style="margin-top: 8px;">
+                        <li>USB drivers are installed correctly (may need reboot)</li>
+                        <li>PC and Switch are on the same network (for FTP)</li>
+                        <li>Sphaira is running and in the correct install mode</li>
+                        <li>Switch IP is correct (check in Switch network settings)</li>
+                    </ul>
+                </div>
+                <div class="card-note">
+                    <strong>Window Behavior:</strong> When built as an .exe, the window stays open on error so you can read the error message. Press Enter to close it.
+                </div>
+                <div class="card-note" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border-left-color: #667eea;">
+                    <strong>🎉 Quick Reference:</strong> Download links: <a href="/static/cartelpack/cartelpack.zip" download style="color: white; text-decoration: underline;">CartelPack</a> | <a href="https://files.obnoxious.lol/switch" target="_blank" rel="noopener noreferrer" style="color: white; text-decoration: underline;">SuperZip & HATS Packs</a>
+                </div>
+            </div>
+            
             <div class="send-to-switch-links">
                 <a href="/static/cartelpack/cartelpack.zip" download class="btn-download-primary">
                     <span class="btn-icon">⬇️</span> Download CartelPack
@@ -236,165 +357,7 @@
     </div>
     {% endif %}
     
-    <!-- How to Play Section -->
-    <div class="how-to-play-section">
-        <div class="how-to-play-header">
-            <h2 class="how-to-play-title">🎮 How to Play</h2>
-            <p class="how-to-play-subtitle">Learn how to use your downloaded games</p>
-        </div>
-        
-        <div class="how-to-play-content">
-            <div class="how-to-play-card">
-                <div class="card-icon">💻</div>
-                <h3 class="card-title">Using Yuzu Emulator (PC)</h3>
-                <div class="card-content">
-                    <ol class="instruction-list">
-                        <li>Download and install <strong>Yuzu Emulator</strong> from the official website</li>
-                        <li>Download your game files (NSP, XCI, or NSZ format)</li>
-                        <li>Open Yuzu and go to <strong>File → Install Files to NAND</strong></li>
-                        <li>Select your downloaded game file</li>
-                        <li>Once installed, the game will appear in your game library</li>
-                        <li>Double-click to launch and enjoy!</li>
-                    </ol>
-                    <div class="card-note">
-                        <strong>Note:</strong> You'll need Switch firmware files and prod.keys to run games. Check the Yuzu documentation for setup instructions.
-                    </div>
-                </div>
-            </div>
-            
-            <div class="how-to-play-card">
-                <div class="card-icon">🎮</div>
-                <h3 class="card-title">Using a Modded Switch</h3>
-                <div class="card-content">
-                    <ol class="instruction-list">
-                        <li>Ensure your Switch is properly modded with CFW (Custom Firmware) like Atmosphere</li>
-                        <li>Download your game files (NSP format recommended)</li>
-                        <li>Transfer the NSP files to your SD card's <code>/switch/</code> folder or use a USB transfer tool</li>
-                            <li>Install games using <a href="https://github.com/hax4dazy/TinWoo/">TinWoo</a> & <a href="https://github.com/developersu/ns-usbloader">NS USB Loader</a> or similar tools</li>
-                        <li>Launch the game from your Switch home menu</li>
-                    </ol>
-                    <div class="card-note">
-                        <strong>Warning:</strong> Only use modded consoles offline or with appropriate precautions to avoid bans.
-                    </div>
-                </div>
-            </div>
-            
-            <div class="how-to-play-card">
-                <div class="card-icon">📤</div>
-                <h3 class="card-title">Using moddingcartel.exe (Recommended)</h3>
-                <div class="card-content">
-                    <p class="modding-text">
-                        <strong>moddingcartel.exe</strong> is our USB & FTP client that automatically sends games from the website directly to your Switch - no manual downloads needed!
-                    </p>
-                    
-                    <h4 style="margin-top: 20px; margin-bottom: 15px; color: #333; font-size: 1.1rem;">📦 What's in CartelPack?</h4>
-                    <p style="margin-bottom: 15px; color: #555;">The CartelPack includes everything you need:</p>
-                    <ul style="margin-bottom: 20px; color: #555;">
-                        <li><code>moddingcartel.exe</code> - USB & FTP extension for sending games to your Switch</li>
-                        <li><code>nsusbloader_installer.exe</code> - NS USBLoader installer</li>
-                        <li><code>nswdrivers.exe</code> - Nintendo Switch USB drivers installer</li>
-                        <li><code>switch/sphaira</code> - Sphaira homebrew (installer + launcher + FTP)</li>
-                        <li><code>switch/tinwoo</code> - TinWoo installer (HTTP + USB + Network support)</li>
-                    </ul>
-                    
-                    <h4 style="margin-top: 20px; margin-bottom: 15px; color: #333; font-size: 1.1rem;">🚀 Complete Setup Guide</h4>
-                    <ol class="instruction-list">
-                        <li><strong>Download CartelPack:</strong> Get <a href="/static/cartelpack/cartelpack.zip" download>cartelpack.zip</a> from above and extract it to a folder on your PC</li>
-                        <li><strong>Install USB Drivers:</strong> Run <code>cartelpack/nswdrivers.exe</code> and follow the installer. <em>May require reboot for USB method to work</em></li>
-                        <li><strong>Connect Switch to Network:</strong> Connect your Nintendo Switch to the same network as your PC (Ethernet or WiFi both work). If using FTP method, no reboot needed!</li>
-                        <li><strong>Prepare SD Card:</strong> 
-                            <ul style="margin-top: 8px;">
-                                <li>Boot into Hekate and mount SD card to PC, OR</li>
-                                <li>Turn off Switch, remove microSD, and use a microSD reader (USB adapter or phone)</li>
-                                <li><strong>Important:</strong> You must have <a href="https://files.obnoxious.lol/switch" target="_blank" rel="noopener noreferrer">SuperZip OR HATS pack</a> already installed on your Switch!</li>
-                            </ul>
-                        </li>
-                        <li><strong>Install Switch Software:</strong> Copy the contents of <code>cartelpack/switch/</code> folder (sphaira and tinwoo folders) to your microSD card's <code>/switch/</code> directory</li>
-                        <li><strong>Boot Your Switch:</strong> Eject the SD card safely, put it back in your Switch, and boot into CFW (Atmosphere)</li>
-                        <li><strong>Open Sphaira:</strong> 
-                            <ul style="margin-top: 8px;">
-                                <li>Launch any game while holding R button on the right joycon to open hbmenu</li>
-                                <li>If hbmenu appears, find and launch Sphaira from the menu</li>
-                                <li>Alternatively, press Album button to access homebrew launcher, then open Sphaira</li>
-                                <li><em>Tip:</em> Applet mode works fine for installing smaller games. For larger games, use "Game Mode" (hold R while launching a game)</li>
-                                <li><em>Optional:</em> In Sphaira settings, you can replace hbmenu entirely (recommended for ease of use)</li>
-                            </ul>
-                        </li>
-                        <li><strong>Enable Transfer Methods in Sphaira:</strong> 
-                            <ul style="margin-top: 8px;">
-                                <li>In Sphaira, press <strong>Y</strong> → <strong>Menu</strong> → <strong>FTP Install</strong> → <strong>Enable</strong></li>
-                                <li>Do the same for <strong>USB Install</strong> (Y → Menu → USB Install → Enable)</li>
-                                <li>Navigate to the FTP Install or USB Install menu and keep Sphaira ready to receive files</li>
-                            </ul>
-                        </li>
-                        <li><strong>Run moddingcartel.exe:</strong> 
-                            <ul style="margin-top: 8px;">
-                                <li>Launch <code>cartelpack/moddingcartel.exe</code> from your PC</li>
-                                <li>The program will prompt you to sign in with your ModdingCartel account</li>
-                                <li>If you don't have an account, sign up at <a href="https://moddingcartel.com">moddingcartel.com</a> (just username + password, no email/SMS required, free!)</li>
-                                <li>When asked for website/hostname, just press Enter (uses default)</li>
-                            </ul>
-                        </li>
-                        <li><strong>Configure Switch IP Address:</strong> 
-                            <ul style="margin-top: 8px;">
-                                <li>When prompted for Switch IP, you can manually enter it, OR</li>
-                                <li>Press Enter to auto-scan (automatically scans 192.168.*.* and 10.0.*.* ranges)</li>
-                                <li>The app verifies the IP on launch - if unreachable, it will rescan automatically</li>
-                                <li>Find your Switch's IP: In Sphaira or Switch System Settings → Internet → Connection Status</li>
-                            </ul>
-                        </li>
-                        <li><strong>Start Installing Games!</strong> 
-                            <ul style="margin-top: 8px;">
-                                <li>If successful, you'll see "Ready! Start adding games to the queue..."</li>
-                                <li>Go to <a href="https://moddingcartel.com/search">moddingcartel.com</a> and add games to your queue</li>
-                                <li>moddingcartel.exe will automatically download and send them to your Switch!</li>
-                                <li>Games install directly to your Switch - no manual file transfers needed</li>
-                            </ul>
-                        </li>
-                    </ol>
-                    
-                    <h4 style="margin-top: 25px; margin-bottom: 15px; color: #333; font-size: 1.1rem;">💡 Tips & Troubleshooting</h4>
-                    <div class="card-note">
-                        <strong>Configuration Files:</strong> Config file (<code>config.yaml</code>) and log file (<code>send_to_switch.log</code>) are stored in the same directory as moddingcartel.exe. Check the log file if you encounter problems.
-                    </div>
-                    <div class="card-note">
-                        <strong>Manual IP Configuration:</strong> You can manually edit the Switch IP address in <code>config.yaml</code> if needed. The auto-scanner searches 192.168.*.* and 10.0.*.* network ranges.
-                    </div>
-                    <div class="card-note">
-                        <strong>Transfer Speed:</strong> USB transfers are significantly faster than FTP! The client automatically detects and prioritizes USB when both are available.
-                    </div>
-                    <div class="card-note">
-                        <strong>Error Handling:</strong> If the program crashes, neither USB nor FTP is working properly. Ensure:
-                        <ul style="margin-top: 8px;">
-                            <li>USB drivers are installed correctly (may need reboot)</li>
-                            <li>PC and Switch are on the same network (for FTP)</li>
-                            <li>Sphaira is running and in the correct install mode</li>
-                            <li>Switch IP is correct (check in Switch network settings)</li>
-                        </ul>
-                    </div>
-                    <div class="card-note">
-                        <strong>Window Behavior:</strong> When built as an .exe, the window stays open on error so you can read the error message. Press Enter to close it.
-                    </div>
-                    <div class="card-note" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border-left-color: #667eea;">
-                        <strong>🎉 Quick Reference:</strong> Download links: <a href="/static/cartelpack/cartelpack.zip" download style="color: white; text-decoration: underline;">CartelPack</a> | <a href="https://files.obnoxious.lol/switch" target="_blank" rel="noopener noreferrer" style="color: white; text-decoration: underline;">SuperZip & HATS Packs</a>
-                    </div>
-                </div>
-            </div>
-            
-            <div class="how-to-play-card modding-services-card">
-                <div class="card-icon">🔧</div>
-                <h3 class="card-title">Need Modding Services?</h3>
-                <div class="card-content">
-                    <p class="modding-text">
-                        Looking to mod your Switch or need help with setup? The owner of this site offers professional modding services!
-                    </p>
-                    <a href="https://menu.obnoxious.lol" target="_blank" rel="noopener noreferrer" class="btn-modding-services">
-                        🔧 Visit Modding Services
-                    </a>
-                </div>
-            </div>
-        </div>
-    </div>
+
 </div>
 
 <style>
