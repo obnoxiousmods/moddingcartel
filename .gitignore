@@ -3,6 +3,7 @@ __pycache__/
 *.py[codz]
 *$py.class
 *.zip
+config.yaml
 static/cartelpack.zip
 # C extensions
 *.so
