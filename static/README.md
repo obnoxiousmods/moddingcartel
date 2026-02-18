@@ -1,17 +1,17 @@
 ```
-https://moddingcartel.com/static/cartelpack.zip
+https://moddingcartel.com/static/cartelpack/cartelpack.zip
 https://files.obnoxious.lol/switch (Visit here for SuperZip & HATS pack releases) (Extract to microsd & Create emunand in hekate ezpz)
 
 This is a software pack that distributes:
 
-moddingcartel.exe: USB & FTP extension of moddingcartel.com, it allows you to send games from the website to your switch. (Developed by me)
-nsusbloader_installer.exe: NS USBLoader (Developed by ____)
-nswdrivers.exe: Nintendo Switch USB Drivers (Developed by ___)
-switch/sphaira: Nintendo Switch hbmenu replacement + installer + launcher + homebrew menu all in one, ftpd etc, required for switch to install games (Developed by ____)
-switch/tinwoo: Nintendo Switch http+usb+network+usbhdd etc installer (Developed by _____)
+cartelpack/moddingcartel.exe: USB & FTP extension of moddingcartel.com, it allows you to send games from the website to your switch. (Developed by me)
+cartelpack/nsusbloader_installer.exe: NS USBLoader (Developed by ____)
+cartelpack/nswdrivers.exe: Nintendo Switch USB Drivers (Developed by ___)
+cartelpack/switch/sphaira: Nintendo Switch hbmenu replacement + installer + launcher + homebrew menu all in one, ftpd etc, required for switch to install games (Developed by ____)
+cartelpack/switch/tinwoo: Nintendo Switch http+usb+network+usbhdd etc installer (Developed by _____)
 
 
-1. Install nswdrivers.exe ( May need to reboot after for USBC install method )
+1. Install cartelpack/nswdrivers.exe ( May need to reboot after for USBC install method )
 2. Connect your nintendo switch to the same network as your PC (PC can be ethernet or wifi as long as same network, Switch as well) (IF PLAN TO USE FTP YOU WONT NEED TO REBOOT 100%)
 3. Go into Hekate on your NSW & Mount SD card to PC OR turn off your NSW take out the microsd and use a microsd to usb or pc with a microsd reader or a phone etc
 4. Copy & paste or extract this zip onto the microsd (You need to have SuperZip OR HATS pack installed properly already)

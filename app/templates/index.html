@@ -105,7 +105,7 @@
                         <span class="step-number">1</span>
                         <div class="step-content">
                             <strong>Download the Client</strong>
-                            <p>Get the latest Windows release from <a href="https://github.com/obnoxiousmods/moddingcartel" target="_blank" rel="noopener noreferrer">GitHub Releases</a></p>
+                            <p>Get <a href="/static/cartelpack/cartelpack.zip" download>cartelpack.zip</a> which includes moddingcartel.exe, drivers, and Switch installers</p>
                         </div>
                     </div>
                     <div class="setup-step">
@@ -132,6 +132,9 @@
                 </div>
             </div>
             <div class="send-to-switch-links">
+                <a href="/static/cartelpack/cartelpack.zip" download class="btn-download-primary">
+                    <span class="btn-icon">⬇️</span> Download CartelPack
+                </a>
                 <a href="https://github.com/obnoxiousmods/moddingcartel" target="_blank" rel="noopener noreferrer" class="btn-github">
                     <span class="btn-icon">📦</span> View on GitHub
                 </a>
@@ -284,13 +287,13 @@
                         <strong>moddingcartel.exe</strong> is our USB & FTP client that automatically sends games from the website directly to your Switch - no manual downloads needed!
                     </p>
                     <ol class="instruction-list">
-                        <li><strong>Install USB Drivers:</strong> Run <code>nswdrivers.exe</code> from the software pack (may need reboot for USB method)</li>
+                        <li><strong>Install USB Drivers:</strong> Run <code>cartelpack/nswdrivers.exe</code> from the software pack (may need reboot for USB method)</li>
                         <li><strong>Connect Switch to PC Network:</strong> Connect your Switch to the same network as your PC (Ethernet or WiFi) - USB cable works too!</li>
                         <li><strong>Prepare SD Card:</strong> Mount your Switch's SD card to your PC via Hekate, or remove it and use a card reader. You need SuperZip or HATS pack installed.</li>
-                        <li><strong>Install Sphaira:</strong> Copy Sphaira files from <code>switch/sphaira</code> folder to your SD card's <code>/switch/</code> directory</li>
+                        <li><strong>Install Sphaira:</strong> Copy Sphaira files from <code>cartelpack/switch/sphaira</code> folder to your SD card's <code>/switch/</code> directory</li>
                         <li><strong>Launch Sphaira:</strong> Boot your Switch and open Sphaira (hold R while launching a game to access hbmenu, then open Sphaira). You can run it in Applet mode for quick installs.</li>
                         <li><strong>Enable Transfer Methods:</strong> In Sphaira, press Y → Menu → enable both "USB Install" and "FTP Install"</li>
-                        <li><strong>Run moddingcartel.exe:</strong> Launch the client, sign in with your ModdingCartel account</li>
+                        <li><strong>Run moddingcartel.exe:</strong> Launch the client from <code>cartelpack/moddingcartel.exe</code>, sign in with your ModdingCartel account</li>
                         <li><strong>Configure IP (Optional):</strong> When prompted, enter your Switch's IP address or press Enter to auto-scan both 192.168.*.* and 10.0.*.* ranges</li>
                         <li><strong>Start Installing:</strong> Add games to your queue from the website - they'll automatically install to your Switch!</li>
                     </ol>
