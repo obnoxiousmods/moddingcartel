@@ -1139,6 +1139,7 @@ footer {
     justify-content: center;
 }
 
+.btn-download-primary,
 .btn-github,
 .btn-sphaira {
     display: inline-flex;
@@ -1155,6 +1156,7 @@ footer {
     box-shadow: 0 4px 12px rgba(156, 136, 255, 0.3);
 }
 
+.btn-download-primary:hover,
 .btn-github:hover,
 .btn-sphaira:hover {
     transform: translateY(-2px);
