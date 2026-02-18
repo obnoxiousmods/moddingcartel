@@ -8,7 +8,6 @@ via Sphaira FTP server. Features a TUI (Text User Interface) for monitoring.
 
 import asyncio
 import logging
-import os
 import sys
 import time
 from pathlib import Path
@@ -29,7 +28,7 @@ from software.cartel import ModdingCartel
 from software.sphaira import SphairaDownloader
 
 # Determine working directory (same as executable or script location)
-if getattr(sys, 'frozen', False):
+if getattr(sys, "frozen", False):
     # Running as compiled executable
     WORKING_DIR = Path(sys.executable).parent
 else:
@@ -157,12 +156,14 @@ class SendToSwitchClient:
         Returns IP address if provided, None for auto-scan.
         """
         self.console.print("\n[bold cyan]Switch IP Configuration[/bold cyan]")
-        self.console.print("Enter your Switch's IP address, or press Enter to auto-scan.\n")
-        
+        self.console.print(
+            "Enter your Switch's IP address, or press Enter to auto-scan.\n"
+        )
+
         ip_input = self.console.input(
             "[yellow]Switch IP address:[/yellow] [dim](or press Enter for auto-scan)[/dim] "
         ).strip()
-        
+
         if ip_input:
             logger.info(f"User provided IP address: {ip_input}")
             return ip_input
@@ -177,16 +178,20 @@ class SendToSwitchClient:
         """
         if not self.sphaira or not self.sphaira.ip_address:
             return False
-            
-        self.console.print(f"\n[cyan]Verifying connection to {self.sphaira.ip_address}...[/cyan]")
-        
+
+        self.console.print(
+            f"\n[cyan]Verifying connection to {self.sphaira.ip_address}...[/cyan]"
+        )
+
         is_valid = await self.sphaira.verify_ip_connection(self.sphaira.ip_address)
-        
+
         if is_valid:
-            self.console.print(f"[green]✓ Connection verified![/green]")
+            self.console.print("[green]✓ Connection verified![/green]")
             return True
         else:
-            self.console.print(f"[yellow]✗ Cannot connect to {self.sphaira.ip_address}[/yellow]")
+            self.console.print(
+                f"[yellow]✗ Cannot connect to {self.sphaira.ip_address}[/yellow]"
+            )
             return False
 
     def setup_sphaira(self, ip_address: Optional[str] = None):
@@ -545,7 +550,7 @@ class SendToSwitchClient:
 
             # Prompt user for Switch IP or auto-scan
             user_ip = self.prompt_for_switch_ip()
-            
+
             # Setup Sphaira with user-provided IP or from config
             if user_ip:
                 self.setup_sphaira(user_ip)
@@ -574,7 +579,7 @@ class SendToSwitchClient:
                         if "switch_ip" in self.config:
                             del self.config["switch_ip"]
                             self.save_config()
-                
+
                 # Discover Switch if no valid IP
                 if not self.sphaira.ip_address:
                     self.console.print(
@@ -612,9 +617,9 @@ async def main():
         console = Console()
         console.print(f"\n[bold red]Fatal Error:[/bold red] {e}")
         logger.error(f"Fatal error in main: {e}", exc_info=True)
-        
+
         # Keep window open when running as exe
-        if getattr(sys, 'frozen', False):
+        if getattr(sys, "frozen", False):
             console.print("\n[yellow]Press Enter to exit...[/yellow]")
             input()
 
@@ -626,8 +631,8 @@ if __name__ == "__main__":
         console = Console()
         console.print(f"\n[bold red]Unhandled Exception:[/bold red] {e}")
         logger.error(f"Unhandled exception: {e}", exc_info=True)
-        
+
         # Keep window open when running as exe
-        if getattr(sys, 'frozen', False):
+        if getattr(sys, "frozen", False):
             console.print("\n[yellow]Press Enter to exit...[/yellow]")
             input()

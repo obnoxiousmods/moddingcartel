@@ -165,7 +165,11 @@ async def compute_hashes_for_unhashed_entries():
             for entry in entries_to_process:
                 if not entry.get("size"):
                     filepath = entry.get("source")
-                    if filepath and os.path.exists(filepath) and os.path.isfile(filepath):
+                    if (
+                        filepath
+                        and os.path.exists(filepath)
+                        and os.path.isfile(filepath)
+                    ):
                         try:
                             entry["size"] = os.path.getsize(filepath)
                         except Exception:
@@ -176,9 +180,7 @@ async def compute_hashes_for_unhashed_entries():
             # Sort by size (smallest first)
             entries_to_process.sort(key=lambda x: x.get("size", 0))
 
-            logger.info(
-                "→ Processing entries in order from smallest to largest file"
-            )
+            logger.info("→ Processing entries in order from smallest to largest file")
 
             # Build a dictionary to track hashes and detect duplicates
             hash_dict = {}  # key: sha256_hash, value: list of (entry_id, entry_name, filepath)
@@ -229,7 +231,9 @@ async def compute_hashes_for_unhashed_entries():
                     if sha256_result and sha256_result != "processing":
                         if sha256_result not in hash_dict:
                             hash_dict[sha256_result] = []
-                        hash_dict[sha256_result].append((entry_id, entry_name, filepath))
+                        hash_dict[sha256_result].append(
+                            (entry_id, entry_name, filepath)
+                        )
 
                 except Exception as e:
                     logger.error(
@@ -248,24 +252,30 @@ async def compute_hashes_for_unhashed_entries():
             for sha256_hash, entries_list in hash_dict.items():
                 if len(entries_list) > 1:
                     # Found duplicate! Keep the first one, delete the rest
-                    logger.warning(f"→ Found {len(entries_list)} entries with same hash {sha256_hash}")
+                    logger.warning(
+                        f"→ Found {len(entries_list)} entries with same hash {sha256_hash}"
+                    )
                     for i, (entry_id, entry_name, filepath) in enumerate(entries_list):
                         if i == 0:
                             logger.info(f"→ Keeping: {entry_name} ({entry_id})")
                         else:
-                            logger.info(f"→ Deleting duplicate: {entry_name} ({entry_id})")
+                            logger.info(
+                                f"→ Deleting duplicate: {entry_name} ({entry_id})"
+                            )
                             try:
                                 # Delete the file from disk
                                 if os.path.exists(filepath):
                                     os.remove(filepath)
                                     logger.info(f"→ Deleted file: {filepath}")
-                                
+
                                 # Delete the entry from database
                                 await db.delete_entry(entry_id)
                                 logger.info(f"→ Deleted database entry: {entry_id}")
                                 duplicates_found += 1
                             except Exception as e:
-                                logger.error(f"→ Error deleting duplicate {entry_id}: {e}")
+                                logger.error(
+                                    f"→ Error deleting duplicate {entry_id}: {e}"
+                                )
 
             if duplicates_found > 0:
                 logger.info(f"→ Deleted {duplicates_found} duplicate entries")
@@ -487,9 +497,7 @@ async def run_initial_hash_computation():
         # Sort by size (smallest first)
         entries_to_process.sort(key=lambda x: x.get("size", 0))
 
-        logger.info(
-            "→ Processing entries in order from smallest to largest file"
-        )
+        logger.info("→ Processing entries in order from smallest to largest file")
 
         # Process each entry
         for entry in entries_to_process:

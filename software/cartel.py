@@ -3,6 +3,7 @@ ModdingCartel API Client Library
 
 This module provides a Python client for interacting with the ModdingCartel API.
 """
+
 import logging
 from typing import Dict, List, Optional
 
@@ -14,7 +15,9 @@ logger = logging.getLogger(__name__)
 class ModdingCartel:
     """Client for ModdingCartel API"""
 
-    def __init__(self, base_url: str = "http://127.0.0.1:6069", api_key: Optional[str] = None):
+    def __init__(
+        self, base_url: str = "http://127.0.0.1:6069", api_key: Optional[str] = None
+    ):
         """
         Initialize the ModdingCartel client.
 
@@ -63,9 +66,13 @@ class ModdingCartel:
                     self.api_key = data.get("api_key")
                     return data
                 else:
-                    raise Exception(f"Login failed: {data.get('error', 'Unknown error')}")
+                    raise Exception(
+                        f"Login failed: {data.get('error', 'Unknown error')}"
+                    )
             else:
-                raise Exception(f"Login failed with status {response.status_code}: {response.text}")
+                raise Exception(
+                    f"Login failed with status {response.status_code}: {response.text}"
+                )
 
         except httpx.RequestError as e:
             raise Exception(f"Network error during login: {e}")
@@ -94,12 +101,16 @@ class ModdingCartel:
                 if data.get("success"):
                     return data.get("queue", [])
                 else:
-                    raise Exception(f"Failed to get queue: {data.get('error', 'Unknown error')}")
+                    raise Exception(
+                        f"Failed to get queue: {data.get('error', 'Unknown error')}"
+                    )
             elif response.status_code == 401:
                 # Invalid or revoked API key
                 raise Exception("Invalid API Key")
             else:
-                raise Exception(f"Request failed with status {response.status_code}: {response.text}")
+                raise Exception(
+                    f"Request failed with status {response.status_code}: {response.text}"
+                )
 
         except httpx.RequestError as e:
             raise Exception(f"Network error: {e}")
@@ -136,9 +147,13 @@ class ModdingCartel:
                 if data.get("success"):
                     return data
                 else:
-                    raise Exception(f"Failed to update queue item: {data.get('error', 'Unknown error')}")
+                    raise Exception(
+                        f"Failed to update queue item: {data.get('error', 'Unknown error')}"
+                    )
             else:
-                raise Exception(f"Request failed with status {response.status_code}: {response.text}")
+                raise Exception(
+                    f"Request failed with status {response.status_code}: {response.text}"
+                )
 
         except httpx.RequestError as e:
             raise Exception(f"Network error: {e}")
@@ -150,7 +165,7 @@ class ModdingCartel:
         bytes_transferred: Optional[int] = None,
         transfer_speed: Optional[float] = None,
         status: Optional[str] = None,
-        error_message: Optional[str] = None
+        error_message: Optional[str] = None,
     ) -> Dict:
         """
         Update progress information for a queue item.
@@ -197,12 +212,16 @@ class ModdingCartel:
                 if data.get("success"):
                     return data
                 else:
-                    raise Exception(f"Failed to update progress: {data.get('error', 'Unknown error')}")
+                    raise Exception(
+                        f"Failed to update progress: {data.get('error', 'Unknown error')}"
+                    )
             elif response.status_code == 401:
                 # Invalid or revoked API key
                 raise Exception("Invalid API Key")
             else:
-                raise Exception(f"Request failed with status {response.status_code}: {response.text}")
+                raise Exception(
+                    f"Request failed with status {response.status_code}: {response.text}"
+                )
 
         except httpx.RequestError as e:
             raise Exception(f"Network error: {e}")
@@ -233,7 +252,9 @@ class ModdingCartel:
             if response.status_code == 200:
                 return response.json()
             else:
-                raise Exception(f"Request failed with status {response.status_code}: {response.text}")
+                raise Exception(
+                    f"Request failed with status {response.status_code}: {response.text}"
+                )
 
         except httpx.RequestError as e:
             raise Exception(f"Network error: {e}")

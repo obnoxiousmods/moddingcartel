@@ -3,6 +3,7 @@
 Example demonstrating the comprehensive logging functionality
 Run this to see logs being created in ~/.moddingcartel/logs/
 """
+
 import asyncio
 import sys
 from pathlib import Path
@@ -15,9 +16,9 @@ from sphaira import SphairaDownloader
 
 async def example_usb_detection():
     """Example: USB device detection with logging"""
-    print("="*80)
+    print("=" * 80)
     print("Example 1: USB Device Detection")
-    print("="*80)
+    print("=" * 80)
 
     downloader = SphairaDownloader(debug=True)
 
@@ -39,9 +40,9 @@ async def example_usb_detection():
 
 async def example_network_discovery():
     """Example: Network discovery with logging"""
-    print("\n" + "="*80)
+    print("\n" + "=" * 80)
     print("Example 2: Network Discovery")
-    print("="*80)
+    print("=" * 80)
 
     downloader = SphairaDownloader(debug=True)
 
@@ -51,9 +52,7 @@ async def example_network_discovery():
 
     # Scan smaller range for demo
     found = await downloader.discover_and_connect(
-        third_octets=range(0, 2),
-        fourth_octets=range(1, 10),
-        max_concurrent=20
+        third_octets=range(0, 2), fourth_octets=range(1, 10), max_concurrent=20
     )
 
     if found:
@@ -67,9 +66,9 @@ async def example_network_discovery():
 
 async def example_log_inspection():
     """Example: Show log files created"""
-    print("\n" + "="*80)
+    print("\n" + "=" * 80)
     print("Example 3: Log Files")
-    print("="*80)
+    print("=" * 80)
 
     log_dir = Path.home() / ".moddingcartel" / "logs"
 
@@ -82,11 +81,15 @@ async def example_log_inspection():
 
         if log_files:
             # Show last few lines of main log
-            main_logs = [f for f in log_files if "sphaira_" in f.name and "usb_debug" not in f.name]
+            main_logs = [
+                f
+                for f in log_files
+                if "sphaira_" in f.name and "usb_debug" not in f.name
+            ]
             if main_logs:
                 print(f"\nLast 10 lines of {main_logs[-1].name}:")
                 print("-" * 80)
-                with open(main_logs[-1], 'r') as f:
+                with open(main_logs[-1], "r") as f:
                     lines = f.readlines()
                     for line in lines[-10:]:
                         print(line.rstrip())
@@ -104,9 +107,9 @@ async def example_log_inspection():
 
 async def example_logging_overview():
     """Example: Overview of what gets logged"""
-    print("\n" + "="*80)
+    print("\n" + "=" * 80)
     print("Example 4: What Gets Logged")
-    print("="*80)
+    print("=" * 80)
 
     print("""
 The Sphaira logger captures:
@@ -150,9 +153,9 @@ Log files rotate at 10MB to prevent disk space issues.
 
 async def main():
     """Run all examples"""
-    print("\n" + "="*80)
+    print("\n" + "=" * 80)
     print("SPHAIRA COMPREHENSIVE LOGGING - EXAMPLES")
-    print("="*80)
+    print("=" * 80)
 
     # Example 4 first (overview)
     await example_logging_overview()
@@ -167,16 +170,16 @@ async def main():
     # Example 3: Log inspection
     await example_log_inspection()
 
-    print("\n" + "="*80)
+    print("\n" + "=" * 80)
     print("Examples complete!")
-    print("="*80)
+    print("=" * 80)
     print(f"\nCheck logs at: {Path.home() / '.moddingcartel' / 'logs'}")
     print("\nTo view logs:")
-    print(f"  Main log:      tail -f ~/.moddingcartel/logs/sphaira_*.log")
-    print(f"  USB debug log: tail -f ~/.moddingcartel/logs/usb_debug_*.log")
+    print("  Main log:      tail -f ~/.moddingcartel/logs/sphaira_*.log")
+    print("  USB debug log: tail -f ~/.moddingcartel/logs/usb_debug_*.log")
     print("\nTo search logs:")
-    print(f"  USB errors:    grep ERROR ~/.moddingcartel/logs/usb_debug_*.log")
-    print(f"  Transfer info: grep 'Average speed' ~/.moddingcartel/logs/sphaira_*.log")
+    print("  USB errors:    grep ERROR ~/.moddingcartel/logs/usb_debug_*.log")
+    print("  Transfer info: grep 'Average speed' ~/.moddingcartel/logs/sphaira_*.log")
 
 
 if __name__ == "__main__":

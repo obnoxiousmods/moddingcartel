@@ -168,14 +168,18 @@ class Database:
 
             # Create comment_likes collection if it doesn't exist
             if not await self.db.has_collection("comment_likes"):
-                self.comment_likes_collection = await self.db.create_collection("comment_likes")
+                self.comment_likes_collection = await self.db.create_collection(
+                    "comment_likes"
+                )
                 logger.info("Created collection: comment_likes")
             else:
                 self.comment_likes_collection = self.db.collection("comment_likes")
 
             # Create send_queue collection if it doesn't exist
             if not await self.db.has_collection("send_queue"):
-                self.send_queue_collection = await self.db.create_collection("send_queue")
+                self.send_queue_collection = await self.db.create_collection(
+                    "send_queue"
+                )
                 logger.info("Created collection: send_queue")
             else:
                 self.send_queue_collection = self.db.collection("send_queue")
@@ -1964,7 +1968,9 @@ class Database:
             COLLECT vote_type = vote.vote_type WITH COUNT INTO count
             RETURN {vote_type: vote_type, count: count}
             """
-            cursor = await self.db.aql.execute(query, bind_vars={"comment_id": comment_id})
+            cursor = await self.db.aql.execute(
+                query, bind_vars={"comment_id": comment_id}
+            )
             stats = {"likes": 0, "dislikes": 0}
             async with cursor:
                 async for stat in cursor:
@@ -2008,7 +2014,7 @@ class Database:
                 FILTER item.user_id == @user_id AND item.entry_id == @entry_id AND item.status IN ['pending', 'processing']
                 RETURN item
                 """,
-                bind_vars={"user_id": user_id, "entry_id": entry_id}
+                bind_vars={"user_id": user_id, "entry_id": entry_id},
             )
 
             exists = False
@@ -2031,7 +2037,9 @@ class Database:
             }
 
             result = await self.send_queue_collection.insert(queue_item)
-            logger.info(f"Added entry {entry_id} to send queue for user {user_id}: {result['_key']}")
+            logger.info(
+                f"Added entry {entry_id} to send queue for user {user_id}: {result['_key']}"
+            )
             return True
 
         except Exception as e:
@@ -2063,7 +2071,7 @@ class Database:
                     error_message: item.error_message
                 }
                 """,
-                bind_vars={"user_id": user_id}
+                bind_vars={"user_id": user_id},
             )
 
             items = []
@@ -2101,7 +2109,7 @@ class Database:
                     error_message: item.error_message
                 }
                 """,
-                bind_vars={"user_id": user_id}
+                bind_vars={"user_id": user_id},
             )
 
             items = []
@@ -2115,7 +2123,9 @@ class Database:
             logger.error(f"Error fetching all send queue items: {e}")
             return []
 
-    async def update_send_queue_item(self, user_id: str, queue_item_id: str, status: str) -> bool:
+    async def update_send_queue_item(
+        self, user_id: str, queue_item_id: str, status: str
+    ) -> bool:
         """Update status of a send queue item"""
         try:
             # First verify the item belongs to the user
@@ -2125,7 +2135,7 @@ class Database:
                 FILTER item._key == @queue_item_id AND item.user_id == @user_id
                 RETURN item
                 """,
-                bind_vars={"queue_item_id": queue_item_id, "user_id": user_id}
+                bind_vars={"queue_item_id": queue_item_id, "user_id": user_id},
             )
 
             exists = False
@@ -2135,15 +2145,19 @@ class Database:
                     break
 
             if not exists:
-                logger.warning(f"Queue item {queue_item_id} not found for user {user_id}")
+                logger.warning(
+                    f"Queue item {queue_item_id} not found for user {user_id}"
+                )
                 return False
 
             # Update the status
-            result = await self.send_queue_collection.update({
-                "_key": queue_item_id,
-                "status": status,
-                "updated_at": datetime.now(timezone.utc).isoformat(),
-            })
+            result = await self.send_queue_collection.update(
+                {
+                    "_key": queue_item_id,
+                    "status": status,
+                    "updated_at": datetime.now(timezone.utc).isoformat(),
+                }
+            )
 
             if result and not result.get("error"):
                 logger.info(f"Updated queue item {queue_item_id} to status {status}")
@@ -2153,7 +2167,9 @@ class Database:
 
                 return True
             else:
-                logger.error(f"Error updating queue item: {result.get('errorMessage', 'Unknown error')}")
+                logger.error(
+                    f"Error updating queue item: {result.get('errorMessage', 'Unknown error')}"
+                )
                 return False
 
         except Exception as e:
@@ -2168,7 +2184,7 @@ class Database:
         bytes_transferred: Optional[int] = None,
         transfer_speed: Optional[float] = None,
         status: Optional[str] = None,
-        error_message: Optional[str] = None
+        error_message: Optional[str] = None,
     ) -> bool:
         """Update progress information for a send queue item"""
         try:
@@ -2179,7 +2195,7 @@ class Database:
                 FILTER item._key == @queue_item_id AND item.user_id == @user_id
                 RETURN item
                 """,
-                bind_vars={"queue_item_id": queue_item_id, "user_id": user_id}
+                bind_vars={"queue_item_id": queue_item_id, "user_id": user_id},
             )
 
             exists = False
@@ -2189,7 +2205,9 @@ class Database:
                     break
 
             if not exists:
-                logger.warning(f"Queue item {queue_item_id} not found for user {user_id}")
+                logger.warning(
+                    f"Queue item {queue_item_id} not found for user {user_id}"
+                )
                 return False
 
             # Build update document
@@ -2215,7 +2233,9 @@ class Database:
             if result and not result.get("error"):
                 return True
             else:
-                logger.error(f"Error updating queue progress: {result.get('errorMessage', 'Unknown error')}")
+                logger.error(
+                    f"Error updating queue progress: {result.get('errorMessage', 'Unknown error')}"
+                )
                 return False
 
         except Exception as e:
@@ -2232,7 +2252,7 @@ class Database:
                 FILTER item._key == @queue_item_id AND item.user_id == @user_id
                 RETURN item
                 """,
-                bind_vars={"queue_item_id": queue_item_id, "user_id": user_id}
+                bind_vars={"queue_item_id": queue_item_id, "user_id": user_id},
             )
 
             exists = False
@@ -2242,7 +2262,9 @@ class Database:
                     break
 
             if not exists:
-                logger.warning(f"Queue item {queue_item_id} not found for user {user_id}")
+                logger.warning(
+                    f"Queue item {queue_item_id} not found for user {user_id}"
+                )
                 return False
 
             # Delete the item
@@ -2265,7 +2287,7 @@ class Database:
                 REMOVE item IN send_queue
                 RETURN OLD
                 """,
-                bind_vars={"user_id": user_id}
+                bind_vars={"user_id": user_id},
             )
 
             count = 0

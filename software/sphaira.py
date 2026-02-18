@@ -52,20 +52,22 @@ class SphairaDownloader:
             f"SphairaDownloader initialized - IP: {ip_address}, Install folder: {install_folder}, Debug: {debug}"
         )
 
-    async def verify_ip_connection(self, ip_address: str, port=5000, timeout=2.0) -> bool:
+    async def verify_ip_connection(
+        self, ip_address: str, port=5000, timeout=2.0
+    ) -> bool:
         """
         Verify if a specific IP address is still reachable and has Sphaira running.
-        
+
         Args:
             ip_address: The IP address to verify
             port: FTP port (default 5000)
             timeout: Connection timeout in seconds
-            
+
         Returns:
             True if the IP is reachable and has Sphaira, False otherwise
         """
         self.logger.info(f"Verifying connection to {ip_address}:{port}...")
-        
+
         try:
             async with aioftp.Client.context(
                 host=ip_address, port=port, user="anon", password=""
@@ -145,7 +147,7 @@ class SphairaDownloader:
         """
         Scan a specific IP range for Sphaira.
         Returns the IP address if found, None otherwise.
-        
+
         Args:
             ip_prefix: The first two octets of the IP (e.g., "192.168" or "10.0")
             third_octets: Range of third octet values to scan
@@ -256,16 +258,28 @@ class SphairaDownloader:
 
         # Try 192.168.*.* first
         found_ip = await self._scan_ip_range(
-            "192.168", third_octets, fourth_octets, port, max_concurrent, connect_timeout, stat_timeout
+            "192.168",
+            third_octets,
+            fourth_octets,
+            port,
+            max_concurrent,
+            connect_timeout,
+            stat_timeout,
         )
-        
+
         # If not found, try 10.0.*.* range
         if not found_ip:
             self.logger.info("Switch not found in 192.168.*.*, trying 10.0.*.*...")
             if self.debug:
                 tqdm.write("Switch not found in 192.168.*.*, trying 10.0.*.*...")
             found_ip = await self._scan_ip_range(
-                "10.0", third_octets, fourth_octets, port, max_concurrent, connect_timeout, stat_timeout
+                "10.0",
+                third_octets,
+                fourth_octets,
+                port,
+                max_concurrent,
+                connect_timeout,
+                stat_timeout,
             )
 
         if found_ip:
@@ -449,7 +463,9 @@ class SphairaDownloader:
                                 progress_callback(len(buf)), loop
                             )
                         except Exception as e:
-                            self.logger.warning(f"Failed to schedule progress callback: {e}")
+                            self.logger.warning(
+                                f"Failed to schedule progress callback: {e}"
+                            )
 
         await asyncio.get_event_loop().run_in_executor(None, _transfer_loop)
 
