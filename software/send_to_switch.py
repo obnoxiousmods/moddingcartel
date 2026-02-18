@@ -8,6 +8,7 @@ via Sphaira FTP server. Features a TUI (Text User Interface) for monitoring.
 
 import asyncio
 import logging
+import os
 import sys
 import time
 from pathlib import Path
@@ -27,19 +28,29 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 from software.cartel import ModdingCartel
 from software.sphaira import SphairaDownloader
 
+# Determine working directory (same as executable or script location)
+if getattr(sys, 'frozen', False):
+    # Running as compiled executable
+    WORKING_DIR = Path(sys.executable).parent
+else:
+    # Running as script
+    WORKING_DIR = Path(__file__).parent
+
+# Configuration and logging in working directory
+CONFIG_FILE = WORKING_DIR / "config.yaml"
+LOG_FILE = WORKING_DIR / "send_to_switch.log"
+
 # Setup logging
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
     handlers=[
-        logging.FileHandler("send_to_switch.log"),
+        logging.FileHandler(LOG_FILE),
         logging.StreamHandler(),
     ],
 )
 logger = logging.getLogger(__name__)
 
-# Configuration
-CONFIG_FILE = Path.home() / ".config" / "send_to_switch" / "config.yaml"
 POLL_INTERVAL = 3  # seconds
 
 
@@ -79,9 +90,9 @@ class SendToSwitchClient:
             return False
 
     def save_config(self):
-        """Save configuration to YAML file"""
+        """Save configuration to YAML file in working directory"""
         try:
-            self.config_path.parent.mkdir(parents=True, exist_ok=True)
+            # WORKING_DIR exists (derived from executable/script location)
             with open(self.config_path, "w") as f:
                 yaml.dump(self.config, f, default_flow_style=False)
             logger.info(f"Configuration saved to {self.config_path}")
@@ -138,6 +149,44 @@ class SendToSwitchClient:
         except Exception as e:
             self.console.print(f"[red]✗ Error during login: {e}[/red]")
             logger.error(f"Login error: {e}")
+            return False
+
+    def prompt_for_switch_ip(self) -> Optional[str]:
+        """
+        Prompt user for Switch IP address.
+        Returns IP address if provided, None for auto-scan.
+        """
+        self.console.print("\n[bold cyan]Switch IP Configuration[/bold cyan]")
+        self.console.print("Enter your Switch's IP address, or press Enter to auto-scan.\n")
+        
+        ip_input = self.console.input(
+            "[yellow]Switch IP address:[/yellow] [dim](or press Enter for auto-scan)[/dim] "
+        ).strip()
+        
+        if ip_input:
+            logger.info(f"User provided IP address: {ip_input}")
+            return ip_input
+        else:
+            logger.info("User opted for auto-scan")
+            return None
+
+    async def verify_switch_connection(self) -> bool:
+        """
+        Verify if the configured Switch IP is still reachable.
+        Returns True if connection is good, False if we need to rescan.
+        """
+        if not self.sphaira or not self.sphaira.ip_address:
+            return False
+            
+        self.console.print(f"\n[cyan]Verifying connection to {self.sphaira.ip_address}...[/cyan]")
+        
+        is_valid = await self.sphaira.verify_ip_connection(self.sphaira.ip_address)
+        
+        if is_valid:
+            self.console.print(f"[green]✓ Connection verified![/green]")
+            return True
+        else:
+            self.console.print(f"[yellow]✗ Cannot connect to {self.sphaira.ip_address}[/yellow]")
             return False
 
     def setup_sphaira(self, ip_address: Optional[str] = None):
@@ -494,8 +543,14 @@ class SendToSwitchClient:
             if not self.setup_authentication():
                 return
 
-            # Setup Sphaira
-            self.setup_sphaira()
+            # Prompt user for Switch IP or auto-scan
+            user_ip = self.prompt_for_switch_ip()
+            
+            # Setup Sphaira with user-provided IP or from config
+            if user_ip:
+                self.setup_sphaira(user_ip)
+            else:
+                self.setup_sphaira()
 
             # Try USB detection first
             self.console.print("\n[cyan]Checking for USB connection...[/cyan]")
@@ -508,7 +563,19 @@ class SendToSwitchClient:
                     "[yellow]No USB connection detected. Will use network (FTP).[/yellow]"
                 )
 
-                # Discover Switch if no IP configured
+                # If we have a configured IP, verify it's still good
+                if self.sphaira.ip_address:
+                    if not await self.verify_switch_connection():
+                        self.console.print(
+                            "[yellow]Saved IP is no longer reachable. Starting network scan...[/yellow]"
+                        )
+                        # Clear the saved IP so we scan
+                        self.sphaira.ip_address = None
+                        if "switch_ip" in self.config:
+                            del self.config["switch_ip"]
+                            self.save_config()
+                
+                # Discover Switch if no valid IP
                 if not self.sphaira.ip_address:
                     self.console.print(
                         "\n[yellow]Discovering Switch on network...[/yellow]"
@@ -538,9 +605,29 @@ class SendToSwitchClient:
 
 async def main():
     """Main entry point"""
-    client = SendToSwitchClient()
-    await client.run()
+    try:
+        client = SendToSwitchClient()
+        await client.run()
+    except Exception as e:
+        console = Console()
+        console.print(f"\n[bold red]Fatal Error:[/bold red] {e}")
+        logger.error(f"Fatal error in main: {e}", exc_info=True)
+        
+        # Keep window open when running as exe
+        if getattr(sys, 'frozen', False):
+            console.print("\n[yellow]Press Enter to exit...[/yellow]")
+            input()
 
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    try:
+        asyncio.run(main())
+    except Exception as e:
+        console = Console()
+        console.print(f"\n[bold red]Unhandled Exception:[/bold red] {e}")
+        logger.error(f"Unhandled exception: {e}", exc_info=True)
+        
+        # Keep window open when running as exe
+        if getattr(sys, 'frozen', False):
+            console.print("\n[yellow]Press Enter to exit...[/yellow]")
+            input()
