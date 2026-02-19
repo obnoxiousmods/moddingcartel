@@ -73,6 +73,21 @@
         </a>
     </div>
 
+    <!-- Moderator Actions Section -->
+    {% if is_moderator %}
+    <div class="mod-actions-section">
+        <div class="mod-actions-card">
+            <div class="mod-action-item">
+                <span class="mod-action-label">📋 Pending Requests</span>
+                <div class="mod-action-content">
+                    <span class="pending-count-badge">{{ pending_count }}</span>
+                    <a href="/modcp/requests" class="btn-view-requests">View Requests</a>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
     <!-- Send to Switch Section -->
     <div class="send-to-switch-section">
         <div class="send-to-switch-card">
@@ -265,21 +280,6 @@
             </div>
         </div>
     </div>
-
-    <!-- Moderator Actions Section -->
-    {% if is_moderator %}
-    <div class="mod-actions-section">
-        <div class="mod-actions-card">
-            <div class="mod-action-item">
-                <span class="mod-action-label">📋 Pending Requests</span>
-                <div class="mod-action-content">
-                    <span class="pending-count-badge">{{ pending_count }}</span>
-                    <a href="/modcp/requests" class="btn-view-requests">View Requests</a>
-                </div>
-            </div>
-        </div>
-    </div>
-    {% endif %}
     
     <!-- User Statistics Section -->
     {% if user_stats %}
