@@ -1,6 +1,7 @@
 import asyncio
 import logging
 import os
+import sys
 
 from starlette.applications import Starlette
 from starlette.middleware import Middleware
@@ -113,6 +114,22 @@ logger = logging.getLogger(__name__)
 
 # Background task control
 background_hash_task = None
+background_db_health_task = None
+
+
+async def check_db_health():
+    """Background service that checks ArangoDB connection every 15 seconds and exits if invalid"""
+    while True:
+        try:
+            if not await db.ping():
+                logger.error("→ ArangoDB connection lost. Exiting so systemd can restart.")
+                sys.exit(1)
+        except asyncio.CancelledError:
+            break
+        except Exception as e:
+            logger.error(f"→ ArangoDB health check failed: {e}. Exiting so systemd can restart.")
+            sys.exit(1)
+        await asyncio.sleep(15)
 
 
 # Background hash computation service
@@ -408,7 +425,7 @@ app = Starlette(
 # Startup event
 @app.on_event("startup")
 async def startup():
-    global background_hash_task
+    global background_hash_task, background_db_health_task
     logger.info("→ App starting...")
 
     # Only try to connect to database if initialized
@@ -416,6 +433,15 @@ async def startup():
         try:
             await db.connect()
             logger.info("→ Database connected successfully")
+
+            # Validate the connection is working on startup
+            if not await db.ping():
+                logger.error("→ ArangoDB connection invalid on startup. Exiting so systemd can restart.")
+                sys.exit(1)
+
+            # Start background DB health check service
+            background_db_health_task = asyncio.create_task(check_db_health())
+            logger.info("→ ArangoDB health check service started (every 15 seconds)")
 
             # Start background hash computation service
             background_hash_task = asyncio.create_task(
@@ -426,9 +452,12 @@ async def startup():
             # Run initial hash computation immediately (in background, don't wait)
             asyncio.create_task(run_initial_hash_computation())
 
+        except SystemExit:
+            raise
         except Exception as e:
             logger.error(f"→ Failed to connect to database: {e}")
-            logger.warning("→ App will continue but database features won't work")
+            logger.error("→ Exiting so systemd can restart.")
+            sys.exit(1)
     else:
         logger.info("→ System not initialized. Please visit /admincp/init to set up.")
 
@@ -552,8 +581,17 @@ async def run_initial_hash_computation():
 # Shutdown event
 @app.on_event("shutdown")
 async def shutdown():
-    global background_hash_task
+    global background_hash_task, background_db_health_task
     logger.info("→ App shutting down...")
+
+    # Cancel background DB health check task
+    if background_db_health_task:
+        background_db_health_task.cancel()
+        try:
+            await background_db_health_task
+        except asyncio.CancelledError:
+            pass
+        logger.info("→ ArangoDB health check service stopped")
 
     # Cancel background hash task
     if background_hash_task:

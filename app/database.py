@@ -186,6 +186,16 @@ class Database:
             logger.error(f"Failed to connect to ArangoDB: {e}")
             raise
 
+    async def ping(self) -> bool:
+        """Check if the ArangoDB connection is still valid"""
+        try:
+            if self.db is None:
+                return False
+            await self.db.aql.execute("RETURN 1")
+            return True
+        except Exception:
+            return False
+
     async def disconnect(self):
         """Close database connection"""
         if self.client:
