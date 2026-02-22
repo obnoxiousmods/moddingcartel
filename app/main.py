@@ -116,18 +116,32 @@ background_hash_task = None
 background_db_health_task = None
 
 
+async def _reconnect_db():
+    """Attempt to reconnect to ArangoDB infinitely until successful"""
+    while True:
+        try:
+            await db.connect()
+            logger.info("→ ArangoDB reconnected successfully")
+            return
+        except asyncio.CancelledError:
+            raise
+        except Exception as e:
+            logger.error(f"→ ArangoDB reconnect failed: {e}. Retrying in 15 seconds...")
+            await asyncio.sleep(15)
+
+
 async def check_db_health():
-    """Background service that checks ArangoDB connection every 15 seconds and exits if invalid"""
+    """Background service that checks ArangoDB connection every 15 seconds and reconnects if invalid"""
     while True:
         try:
             if not await db.ping():
-                logger.error("→ ArangoDB connection lost. Exiting so systemd can restart.")
-                os._exit(1)
+                logger.warning("→ ArangoDB connection lost. Attempting to reconnect...")
+                await _reconnect_db()
         except asyncio.CancelledError:
             break
         except Exception as e:
-            logger.error(f"→ ArangoDB health check failed: {e}. Exiting so systemd can restart.")
-            os._exit(1)
+            logger.error(f"→ ArangoDB health check failed: {e}. Attempting to reconnect...")
+            await _reconnect_db()
         await asyncio.sleep(15)
 
 
@@ -429,32 +443,36 @@ async def startup():
 
     # Only try to connect to database if initialized
     if Config.is_initialized():
-        try:
-            await db.connect()
-            logger.info("→ Database connected successfully")
+        while True:
+            try:
+                await db.connect()
+                logger.info("→ Database connected successfully")
 
-            # Validate the connection is working on startup
-            if not await db.ping():
-                logger.error("→ ArangoDB connection invalid on startup. Exiting so systemd can restart.")
-                os._exit(1)
+                # Validate the connection is working on startup
+                if not await db.ping():
+                    logger.warning("→ ArangoDB connection invalid on startup. Retrying in 15 seconds...")
+                    await asyncio.sleep(15)
+                    continue
 
-            # Start background DB health check service
-            background_db_health_task = asyncio.create_task(check_db_health())
-            logger.info("→ ArangoDB health check service started (every 15 seconds)")
+                break
+            except asyncio.CancelledError:
+                raise
+            except Exception as e:
+                logger.error(f"→ Failed to connect to database: {e}. Retrying in 15 seconds...")
+                await asyncio.sleep(15)
 
-            # Start background hash computation service
-            background_hash_task = asyncio.create_task(
-                compute_hashes_for_unhashed_entries()
-            )
-            logger.info("→ Background hash computation service started")
+        # Start background DB health check service
+        background_db_health_task = asyncio.create_task(check_db_health())
+        logger.info("→ ArangoDB health check service started (every 15 seconds)")
 
-            # Run initial hash computation immediately (in background, don't wait)
-            asyncio.create_task(run_initial_hash_computation())
+        # Start background hash computation service
+        background_hash_task = asyncio.create_task(
+            compute_hashes_for_unhashed_entries()
+        )
+        logger.info("→ Background hash computation service started")
 
-        except Exception as e:
-            logger.error(f"→ Failed to connect to database: {e}")
-            logger.error("→ Exiting so systemd can restart.")
-            os._exit(1)
+        # Run initial hash computation immediately (in background, don't wait)
+        asyncio.create_task(run_initial_hash_computation())
     else:
         logger.info("→ System not initialized. Please visit /admincp/init to set up.")
 
