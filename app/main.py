@@ -1,7 +1,6 @@
 import asyncio
 import logging
 import os
-import sys
 
 from starlette.applications import Starlette
 from starlette.middleware import Middleware
@@ -123,12 +122,12 @@ async def check_db_health():
         try:
             if not await db.ping():
                 logger.error("→ ArangoDB connection lost. Exiting so systemd can restart.")
-                sys.exit(1)
+                os._exit(1)
         except asyncio.CancelledError:
             break
         except Exception as e:
             logger.error(f"→ ArangoDB health check failed: {e}. Exiting so systemd can restart.")
-            sys.exit(1)
+            os._exit(1)
         await asyncio.sleep(15)
 
 
@@ -437,7 +436,7 @@ async def startup():
             # Validate the connection is working on startup
             if not await db.ping():
                 logger.error("→ ArangoDB connection invalid on startup. Exiting so systemd can restart.")
-                sys.exit(1)
+                os._exit(1)
 
             # Start background DB health check service
             background_db_health_task = asyncio.create_task(check_db_health())
@@ -452,12 +451,10 @@ async def startup():
             # Run initial hash computation immediately (in background, don't wait)
             asyncio.create_task(run_initial_hash_computation())
 
-        except SystemExit:
-            raise
         except Exception as e:
             logger.error(f"→ Failed to connect to database: {e}")
             logger.error("→ Exiting so systemd can restart.")
-            sys.exit(1)
+            os._exit(1)
     else:
         logger.info("→ System not initialized. Please visit /admincp/init to set up.")
 
