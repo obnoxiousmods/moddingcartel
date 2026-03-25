@@ -6,24 +6,21 @@ echo Building moddingcartel.exe
 echo ============================================
 echo.
 
-REM Check if Python is installed
-python --version >nul 2>&1
+REM Check if uv is installed
+uv --version >nul 2>&1
 if errorlevel 1 (
-    echo ERROR: Python is not installed or not in PATH
-    echo Please install Python 3.10 or later from https://www.python.org/
+    echo ERROR: uv is not installed or not in PATH
+    echo Install uv: https://docs.astral.sh/uv/getting-started/installation/
     pause
     exit /b 1
 )
 
 echo [1/4] Installing dependencies...
-REM Note: Dependencies are reinstalled on each build to ensure clean environment
-python -m pip install --upgrade pip
-python -m pip install pyinstaller
-python -m pip install -r requirements.txt
+uv sync --group dev
 
 echo.
 echo [2/4] Running PyInstaller...
-pyinstaller moddingcartel.spec
+uv run pyinstaller moddingcartel.spec
 
 if errorlevel 1 (
     echo.

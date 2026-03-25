@@ -24,6 +24,7 @@ A modern community platform for managing and distributing Nintendo Switch game f
 ## 📋 Requirements
 
 - Python 3.10+
+- [uv](https://docs.astral.sh/uv/getting-started/installation/) (Python package manager)
 - ArangoDB 3.x+
 
 ## 🚀 Quick Start
@@ -38,7 +39,7 @@ cd switch
 ### 2. Install Python dependencies
 
 ```bash
-pip install -r requirements.txt
+uv sync
 ```
 
 ### 3. Set up ArangoDB
@@ -57,7 +58,7 @@ arangod
 ### 4. Run the application
 
 ```bash
-uvicorn app.main:app --reload --host 0.0.0.0 --port 6069
+uv run uvicorn app.main:app --reload --host 0.0.0.0 --port 6069
 ```
 
 **Or use the provided launch scripts:**
@@ -111,7 +112,7 @@ switch/
 │   ├── templates/            # HTML templates
 │   └── middleware/           # Custom middleware
 ├── static/                   # CSS, JS, assets
-├── requirements.txt
+├── pyproject.toml            # Project config, dependencies, and tool settings
 ├── launch.bat                # Windows launcher
 └── launch.sh                 # Unix launcher
 ```
@@ -197,7 +198,7 @@ security:
 ### Running in development mode
 
 ```bash
-uvicorn app.main:app --reload --host 0.0.0.0 --port 6069
+uv run uvicorn app.main:app --reload --host 0.0.0.0 --port 6069
 ```
 
 The `--reload` flag enables auto-restart on code changes.
@@ -266,7 +267,7 @@ To build the executable yourself, see [BUILD.md](BUILD.md) for detailed instruct
 **Port already in use:**
 ```bash
 # Change port in launch command
-uvicorn app.main:app --host 0.0.0.0 --port 6069
+uv run uvicorn app.main:app --host 0.0.0.0 --port 6069
 ```
 
 ## 📝 License

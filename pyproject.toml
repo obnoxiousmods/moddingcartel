@@ -1,0 +1,64 @@
+[project]
+name = "moddingcartel"
+version = "1.0.0"
+description = "A modern community platform for managing and distributing Nintendo Switch game files"
+readme = "README.md"
+license = "GPL-3.0-or-later"
+requires-python = ">=3.10"
+dependencies = [
+    "starlette",
+    "uvicorn[standard]",
+    "jinja2",
+    "itsdangerous",
+    "python-multipart",
+    "python-arango-async",
+    "aiofiles",
+    "pyyaml",
+    "argon2-cffi",
+    "pyotp",
+    "qrcode[pil]",
+    "aioftp",
+    "progress",
+    "httpx",
+    "tqdm",
+    "rich",
+    "pyusb",
+    "crc32c",
+]
+
+[dependency-groups]
+dev = [
+    "ruff",
+    "pyinstaller",
+]
+
+[tool.ruff]
+# https://docs.astral.sh/ruff/
+
+[tool.ruff.lint]
+# Enable common linting rules
+select = [
+    "E",   # pycodestyle errors
+    "F",   # pyflakes
+    "I",   # isort (import sorting)
+    "W",   # pycodestyle warnings
+]
+
+# Ignore specific rules if needed
+ignore = [
+    "E501",  # Line too long (handled by formatter where appropriate)
+]
+
+# Allow autofix for all enabled rules
+fixable = ["ALL"]
+unfixable = []
+
+[tool.ruff.format]
+# Use double quotes for strings
+quote-style = "double"
+
+# Use spaces for indentation
+indent-style = "space"
+
+# Respect existing line endings
+line-ending = "auto"

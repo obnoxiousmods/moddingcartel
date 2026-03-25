@@ -6,22 +6,19 @@ echo "Building moddingcartel executable"
 echo "============================================"
 echo
 
-# Check if Python is installed
-if ! command -v python3 &> /dev/null; then
-    echo "ERROR: Python 3 is not installed or not in PATH"
-    echo "Please install Python 3.10 or later"
+# Check if uv is installed
+if ! command -v uv &> /dev/null; then
+    echo "ERROR: uv is not installed or not in PATH"
+    echo "Install uv: https://docs.astral.sh/uv/getting-started/installation/"
     exit 1
 fi
 
 echo "[1/4] Installing dependencies..."
-# Note: Dependencies are reinstalled on each build to ensure clean environment
-python3 -m pip install --upgrade pip
-python3 -m pip install pyinstaller
-python3 -m pip install -r requirements.txt
+uv sync --group dev
 
 echo
 echo "[2/4] Running PyInstaller..."
-pyinstaller moddingcartel.spec
+uv run pyinstaller moddingcartel.spec
 
 if [ $? -ne 0 ]; then
     echo
