@@ -79,7 +79,12 @@ async def download_entry(request: Request):
             if user_doc:
                 username = user_doc.get("username", "api_user")
 
-        if user_id:
+        # Only log the download event on the initial request, not on range requests.
+        # Range requests are subsequent chunk fetches for the same logical download
+        # (e.g. from send_to_switch.py / sphaira.py) and must not create duplicate events.
+        is_range_request = request.headers.get("range") is not None
+
+        if user_id and not is_range_request:
             await db.add_download_history(
                 user_id=user_id,
                 entry_id=entry_id,
