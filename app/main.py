@@ -1,6 +1,7 @@
 import asyncio
 import logging
 import os
+from contextlib import asynccontextmanager
 
 from starlette.applications import Starlette
 from starlette.middleware import Middleware
@@ -289,7 +290,7 @@ async def compute_hashes_for_unhashed_entries():
                                 if os.path.exists(filepath):
                                     os.remove(filepath)
                                     logger.info(f"→ Deleted file: {filepath}")
-                                
+
                                 # Delete the entry from database
                                 await db.delete_entry(entry_id)
                                 logger.info(f"→ Deleted database entry: {entry_id}")
@@ -427,17 +428,9 @@ middleware = [
     Middleware(APIAuthMiddleware),
 ]
 
-# Create Starlette application
-app = Starlette(
-    debug=True,
-    routes=routes,
-    middleware=middleware,
-)
-
-
-# Startup event
-@app.on_event("startup")
-async def startup():
+# Lifespan context manager (replaces on_event startup/shutdown)
+@asynccontextmanager
+async def lifespan(_app):
     global background_hash_task, background_db_health_task
     logger.info("→ App starting...")
 
@@ -475,6 +468,45 @@ async def startup():
         asyncio.create_task(run_initial_hash_computation())
     else:
         logger.info("→ System not initialized. Please visit /admincp/init to set up.")
+
+    yield
+
+    # Shutdown
+    logger.info("→ App shutting down...")
+
+    # Cancel background DB health check task
+    if background_db_health_task:
+        background_db_health_task.cancel()
+        try:
+            await background_db_health_task
+        except asyncio.CancelledError:
+            pass
+        logger.info("→ ArangoDB health check service stopped")
+
+    # Cancel background hash task
+    if background_hash_task:
+        background_hash_task.cancel()
+        try:
+            await background_hash_task
+        except asyncio.CancelledError:
+            pass
+        logger.info("→ Background hash computation service stopped")
+
+    if Config.is_initialized():
+        try:
+            await db.disconnect()
+            logger.info("→ Database disconnected")
+        except Exception as e:
+            logger.error(f"→ Error disconnecting from database: {e}")
+
+
+# Create Starlette application
+app = Starlette(
+    debug=True,
+    routes=routes,
+    middleware=middleware,
+    lifespan=lifespan,
+)
 
 
 async def run_initial_hash_computation():
@@ -592,34 +624,3 @@ async def run_initial_hash_computation():
     except Exception as e:
         logger.error(f"→ Error in initial hash computation: {e}", exc_info=True)
 
-
-# Shutdown event
-@app.on_event("shutdown")
-async def shutdown():
-    global background_hash_task, background_db_health_task
-    logger.info("→ App shutting down...")
-
-    # Cancel background DB health check task
-    if background_db_health_task:
-        background_db_health_task.cancel()
-        try:
-            await background_db_health_task
-        except asyncio.CancelledError:
-            pass
-        logger.info("→ ArangoDB health check service stopped")
-
-    # Cancel background hash task
-    if background_hash_task:
-        background_hash_task.cancel()
-        try:
-            await background_hash_task
-        except asyncio.CancelledError:
-            pass
-        logger.info("→ Background hash computation service stopped")
-
-    if Config.is_initialized():
-        try:
-            await db.disconnect()
-            logger.info("→ Database disconnected")
-        except Exception as e:
-            logger.error(f"→ Error disconnecting from database: {e}")
