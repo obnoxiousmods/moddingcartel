@@ -9,8 +9,8 @@ The `send_to_switch.py` script is compiled into a single Windows executable call
 ## Prerequisites
 
 - Python 3.10 or later
-- pip (Python package installer)
-- All dependencies from `requirements.txt`
+- [uv](https://docs.astral.sh/uv/getting-started/installation/) (Python package manager)
+- All dependencies managed in `pyproject.toml`
 
 ## Building Locally
 
@@ -40,22 +40,17 @@ The `send_to_switch.py` script is compiled into a single Windows executable call
 
 If you prefer to build manually:
 
-1. Install PyInstaller:
+1. Install all dependencies (including dev tools):
    ```bash
-   pip install pyinstaller
+   uv sync --group dev
    ```
 
-2. Install project dependencies:
+2. Run PyInstaller with the spec file:
    ```bash
-   pip install -r requirements.txt
+   uv run pyinstaller moddingcartel.spec
    ```
 
-3. Run PyInstaller with the spec file:
-   ```bash
-   pyinstaller moddingcartel.spec
-   ```
-
-4. Find the executable in `dist/moddingcartel.exe` (Windows) or `dist/moddingcartel` (Linux/macOS)
+3. Find the executable in `dist/moddingcartel.exe` (Windows) or `dist/moddingcartel` (Linux/macOS)
 
 ## Automated Builds (GitHub Actions)
 
@@ -166,14 +161,15 @@ The executable is not signed by default. For production releases:
 
 ### "Python is not installed" error
 - Ensure Python 3.10+ is installed and in your PATH
+- Install uv: https://docs.astral.sh/uv/getting-started/installation/
 
 ### "PyInstaller command not found"
-- Run: `pip install pyinstaller`
+- Run: `uv sync --group dev`
 
 ### Build succeeds but executable crashes
 - Check for missing hidden imports in the spec file
 - Test with `debug=True` to see error messages
-- Verify all dependencies are in `requirements.txt`
+- Verify all dependencies are in `pyproject.toml`
 
 ### Antivirus flags the executable
 - This is common with PyInstaller executables
